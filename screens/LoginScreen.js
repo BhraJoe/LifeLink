@@ -12,8 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { loginSchema, validate } from '../utils/validation';
-import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { login } from '../utils/authService';
 
 export default function LoginScreen({ onNavigate }) {
   const [email, setEmail] = useState('');
@@ -29,8 +28,8 @@ export default function LoginScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      onNavigate && onNavigate('HOME');
+      await login(email, password);
+      onNavigate && onNavigate('Home');
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     } finally {

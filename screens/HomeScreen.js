@@ -1,17 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
+import { getUser } from '../utils/authService';
 
 export default function HomeScreen({ onNavigate }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const currentUser = await getUser();
+      setUser(currentUser);
+    };
+    loadUser();
+  }, []);
+
+  const greetingName = user?.fullName?.split(' ')[0] || 'User';
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Welcome Bar */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, Kojo! 👋</Text>
+        <Text style={styles.greeting}>Hello, {greetingName}! 👋</Text>
         <TouchableOpacity style={styles.bellButton} onPress={() => onNavigate('Alerts')}>
           <Feather name="bell" size={24} color="#111827" />
         </TouchableOpacity>

@@ -12,8 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { signUpSchema, validate } from '../utils/validation';
-import { auth } from '../firebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { register } from '../utils/authService';
 
 export default function SignUpScreen({ onNavigate }) {
   const [fullName, setFullName] = useState('');
@@ -31,8 +30,8 @@ export default function SignUpScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      onNavigate && onNavigate('WELCOME');
+      await register(fullName, email, phoneNumber, password);
+      onNavigate && onNavigate('SIGN_IN');
     } catch (error) {
       Alert.alert('Sign Up Failed', error.message);
     } finally {

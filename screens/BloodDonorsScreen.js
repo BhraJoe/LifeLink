@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, StatusBar 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 
-export default function BloodDonorsScreen({ navigation }) {
+export default function BloodDonorsScreen({ onNavigate }) {
   const donors = [
     { id: '1', name: 'Esi A.', bloodGroup: 'O+', distance: '2.3 km away', status: 'Available', avatar: 'https://i.pravatar.cc/100?img=26' },
     { id: '2', name: 'Kofi B.', bloodGroup: 'A+', distance: '3.1 km away', status: 'Available', avatar: 'https://i.pravatar.cc/100?img=11' },
@@ -15,7 +15,7 @@ export default function BloodDonorsScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()}>
+        <TouchableOpacity onPress={() => onNavigate('Home')}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blood Donors</Text>

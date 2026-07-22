@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Image, TouchableOpacity, StatusBar } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 
-export default function LiveLocationScreen({ navigation }) {
+export default function LiveLocationScreen({ onNavigate }) {
   const contacts = [
     { id: '1', name: 'Ama', image: 'https://i.pravatar.cc/100?img=32' },
     { id: '2', name: 'Kwaku', image: 'https://i.pravatar.cc/100?img=12' },
@@ -16,7 +16,7 @@ export default function LiveLocationScreen({ navigation }) {
 
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()}>
+        <TouchableOpacity onPress={() => onNavigate('Home')}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Live Location</Text>

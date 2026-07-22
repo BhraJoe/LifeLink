@@ -45,7 +45,7 @@ export default function SosTriggerScreen({ onNavigate }) {
         </View>
 
         {/* Cancel Button */}
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation?.goBack()}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => onNavigate('Home')}>
           <Text style={styles.cancelButtonText}>Cancel SOS</Text>
         </TouchableOpacity>
       </View>

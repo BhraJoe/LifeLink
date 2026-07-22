@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
-export default function AlertsScreen({ navigation }) {
+export default function AlertsScreen({ onNavigate }) {
   const alerts = [
     {
       id: '1',
@@ -56,7 +56,7 @@ export default function AlertsScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()}>
+        <TouchableOpacity onPress={() => onNavigate('Home')}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Alerts</Text>

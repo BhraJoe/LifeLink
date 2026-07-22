@@ -12,8 +12,7 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView as SafeAreaViewContext } from 'react-native-safe-area-context';
 import { forgotPasswordSchema, validate } from '../utils/validation';
-import { auth } from '../firebaseConfig';
-import { sendPasswordResetEmail } from 'firebase/auth';
+import { forgotPassword } from '../utils/authService';
 
 export default function ForgotPasswordScreen({ onNavigate }) {
   const [email, setEmail] = useState('');
@@ -27,7 +26,7 @@ export default function ForgotPasswordScreen({ onNavigate }) {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
+      await forgotPassword(email);
       Alert.alert('Success', 'Password reset email sent!');
       onNavigate && onNavigate('SIGN_IN');
     } catch (error) {

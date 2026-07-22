@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, Image,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
-export default function ReportIncidentScreen({ navigation }) {
+export default function ReportIncidentScreen({ onNavigate }) {
   const [selectedType, setSelectedType] = useState('Accident');
 
   const incidentTypes = [
@@ -20,7 +20,7 @@ export default function ReportIncidentScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()}>
+        <TouchableOpacity onPress={() => onNavigate('Home')}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Report Incident</Text>

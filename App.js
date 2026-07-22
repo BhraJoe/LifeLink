@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebaseConfig';
+import { isLoggedIn } from './utils/authService';
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
@@ -22,22 +21,39 @@ import LiveLocationScreen from './screens/LiveLocationScreen';
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('LOADING');
   const [initializing, setInitializing] = useState(true);
+  const hasResolvedAuth = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setInitializing(false);
-      if (firebaseUser) {
-        setCurrentScreen('HOME');
-      } else {
-        setCurrentScreen('WELCOME');
-      }
-    });
+    let isMounted = true;
 
-    return () => unsubscribe();
+    const checkAuth = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        if (isMounted && !hasResolvedAuth.current) {
+          hasResolvedAuth.current = true;
+          setCurrentScreen(loggedIn ? 'HOME' : 'WELCOME');
+          setInitializing(false);
+        }
+      } catch (error) {
+        if (isMounted && !hasResolvedAuth.current) {
+          hasResolvedAuth.current = true;
+          setCurrentScreen('WELCOME');
+          setInitializing(false);
+        }
+      }
+    };
+
+    checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleNavigate = (screen) => {
+    hasResolvedAuth.current = true;
     setCurrentScreen(screen);
+    setInitializing(false);
   };
 
   if (initializing) {
@@ -56,6 +72,7 @@ export default function App() {
       case 'WELCOME':
         return <WelcomeScreen onNavigate={handleNavigate} />;
       case 'HOME':
+      case 'Home':
         return <HomeScreen onNavigate={handleNavigate} />;
       case 'Map':
         return <MapScreen onNavigate={handleNavigate} />;

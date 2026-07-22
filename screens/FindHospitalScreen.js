@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, Status
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-export default function FindHospitalScreen({ navigation }) {
+export default function FindHospitalScreen({ onNavigate }) {
   const hospitals = [
     { id: '1', name: '37 Military Hospital', distance: '2.3 km away', address: 'Cantonments, Accra', phone: '024 123 4567', iconBg: '#EFF6FF', iconColor: '#2563EB', is247: true },
     { id: '2', name: 'Ridge Hospital', distance: '3.1 km away', address: 'Ridge, Accra', phone: '020 876 5432', iconBg: '#EFF6FF', iconColor: '#2563EB', is247: true },
@@ -16,7 +16,7 @@ export default function FindHospitalScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack()}>
+        <TouchableOpacity onPress={() => onNavigate('Home')}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Find Hospital</Text>
