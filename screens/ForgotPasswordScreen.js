@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -18,6 +18,14 @@ export default function ForgotPasswordScreen({ onNavigate }) {
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    if (!toastMessage) return;
+
+    const timeout = setTimeout(() => setToastMessage(''), 1400);
+    return () => clearTimeout(timeout);
+  }, [toastMessage]);
 
   const handleSubmit = async () => {
     const result = validate(forgotPasswordSchema, { email });
@@ -27,8 +35,10 @@ export default function ForgotPasswordScreen({ onNavigate }) {
     setLoading(true);
     try {
       await forgotPassword(email);
-      Alert.alert('Success', 'Password reset email sent!');
-      onNavigate && onNavigate('SIGN_IN');
+      setToastMessage('Reset link sent');
+      setTimeout(() => {
+        onNavigate && onNavigate('SIGN_IN');
+      }, 900);
     } catch (error) {
       Alert.alert('Error', error.message);
     } finally {
@@ -83,6 +93,12 @@ export default function ForgotPasswordScreen({ onNavigate }) {
             {loading ? 'Sending...' : 'Send Reset Link'}
           </Text>
         </TouchableOpacity>
+
+        {toastMessage ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Remember your password? </Text>
@@ -167,6 +183,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  toast: {
+    marginTop: 8,
+    marginBottom: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#0F766E',
+    alignSelf: 'center',
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   footerRow: {
     flexDirection: 'row',

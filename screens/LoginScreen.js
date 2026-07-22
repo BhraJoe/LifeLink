@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -20,6 +20,14 @@ export default function LoginScreen({ onNavigate }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    if (!toastMessage) return;
+
+    const timeout = setTimeout(() => setToastMessage(''), 1400);
+    return () => clearTimeout(timeout);
+  }, [toastMessage]);
 
   const handleSubmit = async () => {
     const result = validate(loginSchema, { email, password });
@@ -29,7 +37,10 @@ export default function LoginScreen({ onNavigate }) {
     setLoading(true);
     try {
       await login(email, password);
-      onNavigate && onNavigate('Home');
+      setToastMessage('Login successful');
+      setTimeout(() => {
+        onNavigate && onNavigate('Home');
+      }, 900);
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     } finally {
@@ -138,6 +149,12 @@ export default function LoginScreen({ onNavigate }) {
           <Text style={styles.socialButtonText}>Continue with Apple</Text>
         </TouchableOpacity>
 
+        {toastMessage ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        ) : null}
+
         {/* Footer Link */}
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Don't have an account? </Text>
@@ -231,6 +248,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  toast: {
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#0F766E',
+    alignSelf: 'center',
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -22,6 +22,14 @@ export default function SignUpScreen({ onNavigate }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    if (!toastMessage) return;
+
+    const timeout = setTimeout(() => setToastMessage(''), 1800);
+    return () => clearTimeout(timeout);
+  }, [toastMessage]);
 
   const handleSubmit = async () => {
     const result = validate(signUpSchema, { fullName, email, phoneNumber, password });
@@ -31,7 +39,10 @@ export default function SignUpScreen({ onNavigate }) {
     setLoading(true);
     try {
       await register(fullName, email, phoneNumber, password);
-      onNavigate && onNavigate('SIGN_IN');
+      setToastMessage('Account created successfully');
+      setTimeout(() => {
+        onNavigate && onNavigate('SIGN_IN');
+      }, 1200);
     } catch (error) {
       Alert.alert('Sign Up Failed', error.message);
     } finally {
@@ -153,6 +164,12 @@ export default function SignUpScreen({ onNavigate }) {
           </Text>
         </TouchableOpacity>
 
+        {toastMessage ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        ) : null}
+
         {/* Footer Link */}
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Already have an account? </Text>
@@ -238,6 +255,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  toast: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: '#0F766E',
+    alignSelf: 'center',
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   footerRow: {
     flexDirection: 'row',

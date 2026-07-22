@@ -7,6 +7,7 @@ import BottomTabBar from './BottomTabBar';
 
 export default function ProfileScreen({ navigation, onNavigate }) {
   const [user, setUser] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -27,9 +28,19 @@ export default function ProfileScreen({ navigation, onNavigate }) {
     { id: '6', title: 'About LifeLink', icon: 'information-circle-outline' },
   ];
 
+  useEffect(() => {
+    if (!toastMessage) return;
+
+    const timeout = setTimeout(() => setToastMessage(''), 1400);
+    return () => clearTimeout(timeout);
+  }, [toastMessage]);
+
   const handleLogout = async () => {
+    setToastMessage('Logging out');
     await logout();
-    onNavigate && onNavigate('WELCOME');
+    setTimeout(() => {
+      onNavigate && onNavigate('WELCOME');
+    }, 900);
   };
 
   return (
@@ -59,6 +70,12 @@ export default function ProfileScreen({ navigation, onNavigate }) {
           </TouchableOpacity>
         ))}
 
+        {toastMessage ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        ) : null}
+
         {/* Log Out Option */}
         <TouchableOpacity 
           style={styles.logoutItem} 
@@ -86,6 +103,20 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   menuLeft: { flexDirection: 'row', alignItems: 'center' },
   menuTitle: { fontSize: 15, fontWeight: '600', color: '#111827' },
+  toast: {
+    marginTop: 8,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#0F766E',
+    alignSelf: 'center',
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   logoutItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18, marginTop: 10 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
 });
