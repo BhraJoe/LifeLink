@@ -6,15 +6,37 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, AntDesign } from '@expo/vector-icons';
+import { loginSchema, validate } from '../utils/validation';
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginScreen({ onNavigate }) {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    const result = validate(loginSchema, { email, password });
+    setErrors(result.errors);
+    if (!result.success) return;
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      onNavigate && onNavigate('WELCOME');
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,24 +59,32 @@ export default function LoginScreen({ onNavigate }) {
 
         {/* Form Inputs */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Email or Phone</Text>
+          <Text style={styles.label}>Email</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your email or phone"
+              style={[
+                styles.input,
+                errors.email && styles.inputError
+              ]}
+              placeholder="Enter your email"
               placeholderTextColor="#9EA5B1"
-              value={emailOrPhone}
-              onChangeText={setEmailOrPhone}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
             />
           </View>
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={[
+                styles.input,
+                { flex: 1 },
+                errors.password && styles.inputError
+              ]}
               placeholder="Enter your password"
               placeholderTextColor="#9EA5B1"
               secureTextEntry={!showPassword}
@@ -69,6 +99,7 @@ export default function LoginScreen({ onNavigate }) {
               />
             </TouchableOpacity>
           </View>
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
         {/* Forgot Password */}
@@ -80,8 +111,14 @@ export default function LoginScreen({ onNavigate }) {
         </TouchableOpacity>
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.primaryButton, loading && styles.disabledButton]} 
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={styles.primaryButtonText}>
+            {loading ? 'Logging in...' : 'Login'}
+          </Text>
         </TouchableOpacity>
 
         {/* Divider */}
@@ -163,6 +200,14 @@ const styles = StyleSheet.create({
     color: '#111827',
     width: '100%',
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 6,
+  },
   forgotContainer: {
     alignSelf: 'flex-end',
     marginBottom: 24,
@@ -179,6 +224,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   primaryButtonText: {
     color: '#FFFFFF',

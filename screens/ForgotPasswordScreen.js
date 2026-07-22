@@ -5,16 +5,37 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView as SafeAreaViewContext } from 'react-native-safe-area-context';
+import { forgotPasswordSchema, validate } from '../utils/validation';
+import { auth } from '../firebaseConfig';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function ForgotPasswordScreen({ onNavigate }) {
   const [email, setEmail] = useState('');
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    const result = validate(forgotPasswordSchema, { email });
+    setErrors(result.errors);
+    if (!result.success) return;
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert('Success', 'Password reset email sent!');
+      onNavigate && onNavigate('SIGN_IN');
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaViewContext style={styles.container}>
@@ -39,7 +60,10 @@ export default function ForgotPasswordScreen({ onNavigate }) {
           <Text style={styles.label}>Email</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.email && styles.inputError
+              ]}
               placeholder="Enter your email"
               placeholderTextColor="#9EA5B1"
               keyboardType="email-address"
@@ -48,10 +72,17 @@ export default function ForgotPasswordScreen({ onNavigate }) {
               onChangeText={setEmail}
             />
           </View>
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Send Reset Link</Text>
+        <TouchableOpacity 
+          style={[styles.primaryButton, loading && styles.disabledButton]} 
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={styles.primaryButtonText}>
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.footerRow}>
@@ -114,6 +145,14 @@ const styles = StyleSheet.create({
     color: '#111827',
     width: '100%',
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 6,
+  },
   primaryButton: {
     backgroundColor: '#007A43',
     height: 52,
@@ -121,6 +160,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   primaryButtonText: {
     color: '#FFFFFF',

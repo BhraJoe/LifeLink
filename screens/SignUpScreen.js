@@ -6,10 +6,14 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { signUpSchema, validate } from '../utils/validation';
+import { auth } from '../firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function SignUpScreen({ onNavigate }) {
   const [fullName, setFullName] = useState('');
@@ -17,6 +21,24 @@ export default function SignUpScreen({ onNavigate }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    const result = validate(signUpSchema, { fullName, email, phoneNumber, password });
+    setErrors(result.errors);
+    if (!result.success) return;
+
+    setLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      onNavigate && onNavigate('WELCOME');
+    } catch (error) {
+      Alert.alert('Sign Up Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,15 +62,19 @@ export default function SignUpScreen({ onNavigate }) {
         {/* Full Name Input */}
         <View style={styles.formGroup}>
           <Text style={styles.label}>Full Name</Text>
-          <View style={styles.inputContainer}>
+           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.fullName && styles.inputError
+              ]}
               placeholder="Enter your full name"
               placeholderTextColor="#9EA5B1"
               value={fullName}
               onChangeText={setFullName}
             />
           </View>
+          {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
         </View>
 
         {/* Email Input */}
@@ -56,7 +82,10 @@ export default function SignUpScreen({ onNavigate }) {
           <Text style={styles.label}>Email</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.email && styles.inputError
+              ]}
               placeholder="Enter your email"
               placeholderTextColor="#9EA5B1"
               keyboardType="email-address"
@@ -65,6 +94,7 @@ export default function SignUpScreen({ onNavigate }) {
               onChangeText={setEmail}
             />
           </View>
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
         {/* Phone Number Input */}
@@ -72,7 +102,10 @@ export default function SignUpScreen({ onNavigate }) {
           <Text style={styles.label}>Phone Number</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.phoneNumber && styles.inputError
+              ]}
               placeholder="Enter your phone number"
               placeholderTextColor="#9EA5B1"
               keyboardType="phone-pad"
@@ -80,6 +113,7 @@ export default function SignUpScreen({ onNavigate }) {
               onChangeText={setPhoneNumber}
             />
           </View>
+          {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}
         </View>
 
         {/* Password Input */}
@@ -87,7 +121,11 @@ export default function SignUpScreen({ onNavigate }) {
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={[
+                styles.input,
+                { flex: 1 },
+                errors.password && styles.inputError
+              ]}
               placeholder="Create a password"
               placeholderTextColor="#9EA5B1"
               secureTextEntry={!showPassword}
@@ -102,11 +140,18 @@ export default function SignUpScreen({ onNavigate }) {
               />
             </TouchableOpacity>
           </View>
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Sign Up</Text>
+        <TouchableOpacity 
+          style={[styles.primaryButton, loading && styles.disabledButton]} 
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={styles.primaryButtonText}>
+            {loading ? 'Creating Account...' : 'Sign Up'}
+          </Text>
         </TouchableOpacity>
 
         {/* Footer Link */}
@@ -170,6 +215,14 @@ const styles = StyleSheet.create({
     color: '#111827',
     width: '100%',
   },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 6,
+  },
   primaryButton: {
     backgroundColor: '#007A43',
     height: 52,
@@ -178,6 +231,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     marginBottom: 20,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   primaryButtonText: {
     color: '#FFFFFF',
