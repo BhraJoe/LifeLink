@@ -30,7 +30,7 @@ export default function LoginScreen({ onNavigate }) {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      onNavigate && onNavigate('WELCOME');
+      onNavigate && onNavigate('HOME');
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     } finally {

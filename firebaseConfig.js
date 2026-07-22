@@ -13,10 +13,14 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getApps().length === 0
-  ? initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    })
-  : getAuth(app);
+
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch (error) {
+  auth = getAuth(app);
+}
 
 export { app, auth };
