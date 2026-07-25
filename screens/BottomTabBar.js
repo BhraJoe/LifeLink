@@ -92,10 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
     elevation: 5,
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    boxShadow: '0px 4px 5px rgba(220, 38, 38, 0.3)',
   },
   sosText: {
     color: '#FFFFFF',

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.139.218:4000/api';
+const API_URL = 'http://192.168.253.143:4000/api';
 const TOKEN_KEY = 'lifelink_token';
 const USER_KEY = 'lifelink_user';
 
