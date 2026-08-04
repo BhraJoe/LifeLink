@@ -25,7 +25,7 @@ export default function HomeScreen({ onNavigate }) {
       {/* Top Welcome Bar */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {greetingName}! 👋</Text>
-        <TouchableOpacity style={styles.bellButton} onPress={() => onNavigate('Alerts')}>
+        <TouchableOpacity style={styles.bellButton} onPress={() => onNavigate('DisasterAlerts')}>
           <Feather name="bell" size={24} color="#111827" />
         </TouchableOpacity>
       </View>
@@ -70,18 +70,48 @@ export default function HomeScreen({ onNavigate }) {
             <Text style={styles.actionText}>Blood Donors</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate('FindPharmacy')}>
             <View style={[styles.iconBox, { backgroundColor: '#F0FDF4' }]}>
               <Ionicons name="medical" size={22} color="#16A34A" />
             </View>
             <Text style={styles.actionText}>Pharmacy</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate('MissingPersons')}>
+            <View style={[styles.iconBox, { backgroundColor: '#FEF2F2' }]}>
+              <Feather name="search" size={20} color="#DC2626" />
+            </View>
+            <Text style={styles.actionText}>Missing Persons</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate('DisasterAlerts')}>
+            <View style={[styles.iconBox, { backgroundColor: '#FFF7ED' }]}>
+              <Ionicons name="warning-outline" size={22} color="#EA580C" />
+            </View>
+            <Text style={styles.actionText}>Disaster Alerts</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate('Volunteer')}>
+            <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
+              <FontAwesome5 name="hands-helping" size={20} color="#7C3AED" />
+            </View>
+            <Text style={styles.actionText}>Volunteer Hub</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate('LiveLocation')}>
+            <View style={[styles.iconBox, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="navigate-circle" size={24} color="#D97706" />
+            </View>
+            <Text style={styles.actionText}>Live Sharing</Text>
           </TouchableOpacity>
         </View>
 
         {/* Emergency Contacts List */}
         <View style={styles.contactHeader}>
           <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => onNavigate('EmergencyContacts')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.contactCard}>

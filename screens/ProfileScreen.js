@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { logout, getUser } from '../utils/authService';
+import { logout, getUser, getAvatarUri } from '../utils/authService';
 import BottomTabBar from './BottomTabBar';
-
 export default function ProfileScreen({ navigation, onNavigate }) {
   const [user, setUser] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
@@ -19,6 +18,7 @@ export default function ProfileScreen({ navigation, onNavigate }) {
 
   const userName = user?.fullName || 'User';
   const userPhone = user?.phoneNumber || '';
+  const avatarUri = getAvatarUri(user?.avatar);
   const menuItems = [
     { id: '1', title: 'Emergency Contacts', icon: 'shield-outline' },
     { id: '2', title: 'My Reports', icon: 'document-text-outline' },
@@ -49,11 +49,14 @@ export default function ProfileScreen({ navigation, onNavigate }) {
 
       {/* Dark Green Banner */}
       <View style={styles.profileHeader}>
-        <Image source={{ uri: 'https://i.pravatar.cc/120?img=12' }} style={styles.avatar} />
+        <Image source={{ uri: avatarUri }} style={styles.avatar} />
         <Text style={styles.userName}>{userName}</Text>
         <Text style={styles.userPhone}>{userPhone}</Text>
 
-        <TouchableOpacity style={styles.editBtn}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => onNavigate && onNavigate('EditProfile')}
+        >
           <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>

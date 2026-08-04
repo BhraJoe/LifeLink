@@ -10,6 +10,7 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import HomeScreen from './screens/HomeScreen';
 import CommunityScreen from './screens/CommunityScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
 import MapScreen from './screens/MapScreen';
 import SosTriggerScreen from './screens/SosTriggerScreen';
 import AlertsScreen from './screens/AlertsScreen';
@@ -17,6 +18,11 @@ import ReportIncidentScreen from './screens/ReportIncidentScreen';
 import FindHospitalScreen from './screens/FindHospitalScreen';
 import BloodDonorsScreen from './screens/BloodDonorsScreen';
 import LiveLocationScreen from './screens/LiveLocationScreen';
+import FindPharmacyScreen from './screens/FindPharmacyScreen';
+import VolunteerScreen from './screens/VolunteerScreen';
+import MissingPersonScreen from './screens/MissingPersonScreen';
+import DisasterAlertsScreen from './screens/DisasterAlertsScreen';
+import EmergencyContactsScreen from './screens/EmergencyContactsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('LOADING');
@@ -80,6 +86,8 @@ export default function App() {
         return <CommunityScreen onNavigate={handleNavigate} />;
       case 'Profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
+      case 'EditProfile':
+        return <EditProfileScreen onNavigate={handleNavigate} />;
       case 'SosTrigger':
         return <SosTriggerScreen onNavigate={handleNavigate} />;
       case 'Alerts':
@@ -92,6 +100,16 @@ export default function App() {
         return <BloodDonorsScreen onNavigate={handleNavigate} />;
       case 'LiveLocation':
         return <LiveLocationScreen onNavigate={handleNavigate} />;
+      case 'FindPharmacy':
+        return <FindPharmacyScreen onNavigate={handleNavigate} />;
+      case 'Volunteer':
+        return <VolunteerScreen onNavigate={handleNavigate} />;
+      case 'MissingPersons':
+        return <MissingPersonScreen onNavigate={handleNavigate} />;
+      case 'DisasterAlerts':
+        return <DisasterAlertsScreen onNavigate={handleNavigate} />;
+      case 'EmergencyContacts':
+        return <EmergencyContactsScreen onNavigate={handleNavigate} />;
       case 'SIGN_IN':
         return <LoginScreen onNavigate={handleNavigate} />;
       case 'SIGN_UP':
