@@ -64,12 +64,10 @@ export default function App() {
 
   if (initializing) {
     return (
-      <SafeAreaProvider>
+      <View style={styles.loadingContainer}>
         <StatusBar style="auto" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007A43" />
-        </View>
-      </SafeAreaProvider>
+        <ActivityIndicator size="large" color="#007A43" />
+      </View>
     );
   }
 

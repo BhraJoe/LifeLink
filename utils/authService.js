@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.139.218:4000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api';
 const BASE_URL = API_URL.replace(/\/api$/, '');
 const TOKEN_KEY = 'lifelink_token';
 const USER_KEY = 'lifelink_user';
@@ -115,25 +115,24 @@ export async function getToken() {
 }
 
 export async function getUser() {
-  const raw = await AsyncStorage.getItem(USER_KEY);
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  }
-
   try {
     const data = await request('/auth/me');
     if (data?.user) {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(data.user));
       return data.user;
     }
-    return null;
   } catch {
-    return null;
+    const raw = await AsyncStorage.getItem(USER_KEY);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
   }
+
+  return null;
 }
 
 export async function isLoggedIn() {

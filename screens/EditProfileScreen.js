@@ -36,10 +36,10 @@ export default function EditProfileScreen({ onNavigate }) {
     const loadUser = async () => {
       const currentUser = await getUser();
       if (currentUser) {
-        setFullName(currentUser.fullName || '');
-        setEmail(currentUser.email || '');
-        setPhoneNumber(currentUser.phoneNumber || '');
-        setAvatarFilename(currentUser.avatar || null);
+      setFullName(currentUser.fullName || '');
+      setEmail(currentUser.email || '');
+      setPhoneNumber(currentUser.phoneNumber || '');
+      setAvatarFilename(currentUser.avatar || null);
       }
       setLoading(false);
     };

@@ -42,3 +42,4 @@ yarn-error.*
 
 # backend user data
 backend/data/users.json
+.env
