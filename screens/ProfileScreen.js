@@ -20,12 +20,12 @@ export default function ProfileScreen({ navigation, onNavigate }) {
   const userPhone = user?.phoneNumber || '';
   const avatarUri = getAvatarUri(user?.avatar);
   const menuItems = [
-    { id: '1', title: 'Emergency Contacts', icon: 'shield-outline' },
-    { id: '2', title: 'My Reports', icon: 'document-text-outline' },
-    { id: '3', title: 'Blood Donor Profile', icon: 'water-outline' },
-    { id: '4', title: 'Settings', icon: 'settings-outline' },
-    { id: '5', title: 'Help & Support', icon: 'help-circle-outline' },
-    { id: '6', title: 'About LifeLink', icon: 'information-circle-outline' },
+    { id: '1', title: 'Emergency Contacts', icon: 'shield-outline', screen: 'EmergencyContacts' },
+    { id: '2', title: 'My Reports', icon: 'document-text-outline', screen: 'ReportIncident' },
+    { id: '3', title: 'Blood Donor Profile', icon: 'water-outline', screen: 'BloodDonors' },
+    { id: '4', title: 'Settings', icon: 'settings-outline', screen: 'Settings' },
+    { id: '5', title: 'Help & Support', icon: 'help-circle-outline', screen: 'Help' },
+    { id: '6', title: 'About LifeLink', icon: 'information-circle-outline', screen: 'About' },
   ];
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function ProfileScreen({ navigation, onNavigate }) {
       {/* Menu Options */}
       <ScrollView contentContainerStyle={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuItems.map(item => (
-          <TouchableOpacity key={item.id} style={styles.menuItem}>
+          <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => item.screen && onNavigate && onNavigate(item.screen)}>
             <View style={styles.menuLeft}>
               <Ionicons name={item.icon} size={22} color="#374151" style={{ marginRight: 14 }} />
               <Text style={styles.menuTitle}>{item.title}</Text>

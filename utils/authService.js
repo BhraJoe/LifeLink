@@ -160,3 +160,65 @@ export async function getStoredAuth() {
     user: user[1] ? JSON.parse(user[1]) : null,
   };
 }
+
+export async function getMissingPersons({ status, verifiedOnly, search } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (verifiedOnly !== undefined) params.set('verifiedOnly', String(verifiedOnly));
+  if (search) params.set('search', search);
+
+  const qs = params.toString();
+  const data = await request(`/missing-persons${qs ? `?${qs}` : ''}`);
+  return data.missingPersons || [];
+}
+
+export async function createMissingPerson(payload) {
+  const data = await request('/missing-persons', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+export async function createSighting(id, payload) {
+  const data = await request(`/missing-persons/${encodeURIComponent(id)}/sighting`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+export async function getIncidents({ type, status, search } = {}) {
+  const params = new URLSearchParams();
+  if (type) params.set('type', type);
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
+
+  const qs = params.toString();
+  const data = await request(`/incidents${qs ? `?${qs}` : ''}`);
+  return data.incidents || [];
+}
+
+export async function createIncident(payload) {
+  const data = await request('/incidents', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+export async function updateIncidentStatus(id, status) {
+  const data = await request(`/incidents/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  return data;
+}
+
+export async function shareLiveLocation(payload) {
+  const data = await request('/sos/live-location', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data;
+}

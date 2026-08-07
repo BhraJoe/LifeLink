@@ -141,7 +141,10 @@ export default function EditProfileScreen({ onNavigate }) {
       {/* Header Bar */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => onNavigate && onNavigate('Profile')}
+          onPress={() => {
+            if (typeof onGoBack === 'function') return onGoBack();
+            return onNavigate && onNavigate('Profile');
+          }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Feather name="chevron-left" size={28} color="#000" />

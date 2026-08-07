@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, Image, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { createIncident } from '../utils/authService';
 
 export default function ReportIncidentScreen({ onNavigate }) {
   const [selectedType, setSelectedType] = useState('Accident');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [image, setImage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   const incidentTypes = [
     { id: 'Accident', label: 'Accident', icon: 'car-crash' },
@@ -13,6 +24,95 @@ export default function ReportIncidentScreen({ onNavigate }) {
     { id: 'Pothole', label: 'Pothole', icon: 'road' },
     { id: 'Other', label: 'Other', icon: 'ellipsis-h' },
   ];
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      setLoadingLocation(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is needed to auto-fill your location.');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setLatitude(loc.coords.latitude);
+      setLongitude(loc.coords.longitude);
+
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+
+      const parts = [address.name, address.city, address.region].filter(Boolean);
+      setLocation(parts.join(', ') || `${loc.coords.latitude.toFixed(5)}, ${loc.coords.longitude.toFixed(5)}`);
+    } catch (err) {
+      console.error('Location error:', err);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets?.[0]) {
+        const asset = result.assets[0];
+        setImage({
+          uri: asset.uri,
+          base64: asset.base64,
+          type: asset.mimeType || 'image/jpeg',
+        });
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title || !description || !location) {
+      Alert.alert('Incomplete Form', 'Please fill in the title, description, and location.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const payload = {
+        type: selectedType,
+        title,
+        description,
+        location,
+        latitude,
+        longitude,
+        image: image?.base64 || null,
+      };
+
+      await createIncident(payload);
+      Alert.alert('Success', 'Incident reported successfully. Thank you for keeping the community safe.');
+      setTitle('');
+      setDescription('');
+      setImage(null);
+      setSelectedType('Accident');
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to submit incident report');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,47 +146,68 @@ export default function ReportIncidentScreen({ onNavigate }) {
           })}
         </ScrollView>
 
-        {/* Location Form */}
-        <Text style={styles.sectionTitle}>Location</Text>
+        {/* Title Field */}
+        <Text style={styles.sectionTitle}>Title *</Text>
         <View style={styles.inputContainer}>
-          <TextInput style={styles.input} defaultValue="Lapaz, Accra" />
+          <TextInput
+            style={styles.input}
+            placeholder="Brief title for the incident"
+            value={title}
+            onChangeText={setTitle}
+          />
         </View>
-        <TouchableOpacity style={styles.locationLink}>
-          <Text style={styles.locationLinkText}>Use current location</Text>
+
+        {/* Location Form */}
+        <Text style={styles.sectionTitle}>Location *</Text>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={location}
+            onChangeText={setLocation}
+            placeholder="Incident location"
+          />
+        </View>
+        <TouchableOpacity style={styles.locationLink} onPress={getCurrentLocation}>
+          {loadingLocation ? (
+            <ActivityIndicator size="small" color="#007A43" />
+          ) : (
+            <Text style={styles.locationLinkText}>Use current location</Text>
+          )}
         </TouchableOpacity>
 
         {/* Description Field */}
-        <Text style={styles.sectionTitle}>Description</Text>
+        <Text style={styles.sectionTitle}>Description *</Text>
         <View style={[styles.inputContainer, { height: 100, alignItems: 'flex-start', paddingTop: 10 }]}>
           <TextInput
             style={[styles.input, { textAlignVertical: 'top' }]}
             placeholder="Describe what happened..."
             placeholderTextColor="#9CA3AF"
             multiline
+            value={description}
+            onChangeText={setDescription}
           />
         </View>
 
         {/* Photos Grid */}
         <Text style={styles.sectionTitle}>Add Photos <Text style={styles.optional}>(Optional)</Text></Text>
         <View style={styles.photoGrid}>
-          <TouchableOpacity style={styles.addPhotoCard}>
+          <TouchableOpacity style={styles.addPhotoCard} onPress={pickImage}>
             <Feather name="camera" size={24} color="#6B7280" />
           </TouchableOpacity>
 
-          <View style={styles.photoThumb}>
-            <Image source={{ uri: 'https://picsum.photos/100/100?random=1' }} style={styles.thumbImg} />
-            <TouchableOpacity style={styles.closeBadge}><Ionicons name="close" size={12} color="#FFF" /></TouchableOpacity>
-          </View>
-
-          <View style={styles.photoThumb}>
-            <Image source={{ uri: 'https://picsum.photos/100/100?random=2' }} style={styles.thumbImg} />
-            <TouchableOpacity style={styles.closeBadge}><Ionicons name="close" size={12} color="#FFF" /></TouchableOpacity>
-          </View>
+          {image && (
+            <View style={styles.photoThumb}>
+              <Image source={{ uri: image.uri }} style={styles.thumbImg} />
+              <TouchableOpacity style={styles.closeBadge} onPress={() => setImage(null)}>
+                <Ionicons name="close" size={12} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Submit */}
-        <TouchableOpacity style={styles.submitButton}>
-          <Text style={styles.submitText}>Submit Report</Text>
+        <TouchableOpacity style={[styles.submitButton, submitting && styles.submitButtonDisabled]} onPress={handleSubmit} disabled={submitting}>
+          <Text style={styles.submitText}>{submitting ? 'Submitting...' : 'Submit Report'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -115,5 +236,6 @@ const styles = StyleSheet.create({
   thumbImg: { width: '100%', height: '100%', borderRadius: 14 },
   closeBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#111827', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   submitButton: { backgroundColor: '#007A43', height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
+  submitButtonDisabled: { opacity: 0.7 },
   submitText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

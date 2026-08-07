@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, StatusBar, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
@@ -17,6 +17,10 @@ export default function HomeScreen({ onNavigate }) {
   }, []);
 
   const greetingName = user?.fullName?.split(' ')[0] || 'User';
+
+  const callEmergencyService = (number) => {
+    Linking.openURL(`tel:${number}`);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,7 +127,7 @@ export default function HomeScreen({ onNavigate }) {
               <Text style={styles.contactName}>Police</Text>
               <Text style={styles.contactNumber}>191</Text>
             </View>
-            <TouchableOpacity style={styles.callButton}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
+            <TouchableOpacity style={styles.callButton} onPress={() => callEmergencyService('191')}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
           </View>
 
           <View style={styles.contactRow}>
@@ -134,7 +138,7 @@ export default function HomeScreen({ onNavigate }) {
               <Text style={styles.contactName}>Ambulance</Text>
               <Text style={styles.contactNumber}>193</Text>
             </View>
-            <TouchableOpacity style={styles.callButton}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
+            <TouchableOpacity style={styles.callButton} onPress={() => callEmergencyService('193')}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
           </View>
 
           <View style={[styles.contactRow, { borderBottomWidth: 0 }]}>
@@ -145,7 +149,7 @@ export default function HomeScreen({ onNavigate }) {
               <Text style={styles.contactName}>Fire Service</Text>
               <Text style={styles.contactNumber}>192</Text>
             </View>
-            <TouchableOpacity style={styles.callButton}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
+            <TouchableOpacity style={styles.callButton} onPress={() => callEmergencyService('192')}><Feather name="phone" size={18} color="#007A43" /></TouchableOpacity>
           </View>
         </View>
       </ScrollView>

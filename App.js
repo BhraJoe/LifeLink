@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { isLoggedIn } from './utils/authService';
+import { registerForPushNotificationsAsync } from './utils/notifications';
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
@@ -23,16 +24,26 @@ import VolunteerScreen from './screens/VolunteerScreen';
 import MissingPersonScreen from './screens/MissingPersonScreen';
 import DisasterAlertsScreen from './screens/DisasterAlertsScreen';
 import EmergencyContactsScreen from './screens/EmergencyContactsScreen';
+import AboutScreen from './screens/AboutScreen';
+import HelpScreen from './screens/HelpScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('LOADING');
   const [initializing, setInitializing] = useState(true);
+  const [screenStack, setScreenStack] = useState([]);
   const hasResolvedAuth = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    const checkAuth = async () => {
+    const init = async () => {
+      try {
+        await registerForPushNotificationsAsync();
+      } catch (err) {
+        console.error('Push notification setup failed:', err);
+      }
+
       try {
         const loggedIn = await isLoggedIn();
         if (isMounted && !hasResolvedAuth.current) {
@@ -49,17 +60,38 @@ export default function App() {
       }
     };
 
-    checkAuth();
+    init();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const handleNavigate = (screen) => {
+  const handleNavigate = (screen, options = {}) => {
+    const { replace = false } = options;
     hasResolvedAuth.current = true;
+    setScreenStack(prev => {
+      if (replace) return prev;
+      // push currentScreen onto stack unless it's the same
+      if (!currentScreen || currentScreen === 'LOADING') return prev;
+      return [...prev, currentScreen];
+    });
     setCurrentScreen(screen);
     setInitializing(false);
+  };
+
+  const handleGoBack = () => {
+    setScreenStack(prev => {
+      if (!prev || prev.length === 0) {
+        // fallback to HOME
+        setCurrentScreen('HOME');
+        return [];
+      }
+      const newStack = prev.slice(0, -1);
+      const last = prev[prev.length - 1];
+      setCurrentScreen(last);
+      return newStack;
+    });
   };
 
   if (initializing) {
@@ -83,37 +115,43 @@ export default function App() {
       case 'Community':
         return <CommunityScreen onNavigate={handleNavigate} />;
       case 'Profile':
-        return <ProfileScreen onNavigate={handleNavigate} />;
+        return <ProfileScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'EditProfile':
-        return <EditProfileScreen onNavigate={handleNavigate} />;
+        return <EditProfileScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'SosTrigger':
-        return <SosTriggerScreen onNavigate={handleNavigate} />;
+        return <SosTriggerScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'Alerts':
-        return <AlertsScreen onNavigate={handleNavigate} />;
+        return <AlertsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'ReportIncident':
-        return <ReportIncidentScreen onNavigate={handleNavigate} />;
+        return <ReportIncidentScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'FindHospital':
-        return <FindHospitalScreen onNavigate={handleNavigate} />;
+        return <FindHospitalScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'BloodDonors':
-        return <BloodDonorsScreen onNavigate={handleNavigate} />;
+        return <BloodDonorsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'LiveLocation':
-        return <LiveLocationScreen onNavigate={handleNavigate} />;
+        return <LiveLocationScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'FindPharmacy':
-        return <FindPharmacyScreen onNavigate={handleNavigate} />;
+        return <FindPharmacyScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'Volunteer':
-        return <VolunteerScreen onNavigate={handleNavigate} />;
+        return <VolunteerScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'MissingPersons':
-        return <MissingPersonScreen onNavigate={handleNavigate} />;
+        return <MissingPersonScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'DisasterAlerts':
-        return <DisasterAlertsScreen onNavigate={handleNavigate} />;
+        return <DisasterAlertsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
+      case 'Settings':
+        return <SettingsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
+      case 'About':
+        return <AboutScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
+      case 'Help':
+        return <HelpScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'EmergencyContacts':
-        return <EmergencyContactsScreen onNavigate={handleNavigate} />;
+        return <EmergencyContactsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'SIGN_IN':
-        return <LoginScreen onNavigate={handleNavigate} />;
+        return <LoginScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'SIGN_UP':
-        return <SignUpScreen onNavigate={handleNavigate} />;
+        return <SignUpScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'FORGET_PASSWORD':
-        return <ForgotPasswordScreen onNavigate={handleNavigate} />;
+        return <ForgotPasswordScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       default:
         return <WelcomeScreen onNavigate={handleNavigate} />;
     }

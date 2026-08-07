@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,73 +11,47 @@ import {
   Alert,
   StatusBar,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
-
-const INITIAL_MISSING_PERSONS = [
-  {
-    id: 'mp1',
-    fullName: 'Kofi Mensah',
-    age: 14,
-    gender: 'Male',
-    lastSeenLocation: 'Kaneshie Market Complex, Accra',
-    lastSeenDate: '22 July 2026',
-    description: 'Wearing a yellow school uniform shirt and navy blue shorts. Height approx 5ft 2in.',
-    contactPhone: '+233249991122',
-    displayPhone: '+233 24 999 1122',
-    status: 'ACTIVE',
-    verifiedByAdmin: true,
-    sightingsCount: 3,
-  },
-  {
-    id: 'mp2',
-    fullName: 'Ama Serwaa Poku',
-    age: 72,
-    gender: 'Female',
-    lastSeenLocation: 'Asafo Transport Terminal, Kumasi',
-    lastSeenDate: '24 July 2026',
-    description: 'Elderly woman suffering from mild dementia. Wears a green Kente patterned cloth.',
-    contactPhone: '+233508883344',
-    displayPhone: '+233 50 888 3344',
-    status: 'ACTIVE',
-    verifiedByAdmin: true,
-    sightingsCount: 1,
-  },
-  {
-    id: 'mp3',
-    fullName: 'Yaw Boateng',
-    age: 26,
-    gender: 'Male',
-    lastSeenLocation: 'Tema Community 1 Taxi Rank',
-    lastSeenDate: '20 July 2026',
-    description: 'Driving a silver Toyota Vitz (GW-4892-22). Wearing a black hoodie.',
-    contactPhone: '+233277775566',
-    displayPhone: '+233 27 777 5566',
-    status: 'RESOLVED',
-    verifiedByAdmin: true,
-    sightingsCount: 8,
-  },
-];
+import { getMissingPersons, createMissingPerson, createSighting } from '../utils/authService';
 
 export default function MissingPersonScreen({ onNavigate }) {
-  const [activeTab, setActiveTab] = useState('ALERTS'); // 'ALERTS' or 'REPORT'
-  const [missingPersons, setMissingPersons] = useState(INITIAL_MISSING_PERSONS);
+  const [activeTab, setActiveTab] = useState('ALERTS');
+  const [missingPersons, setMissingPersons] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Sighting Modal State
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [sightingLocation, setSightingLocation] = useState('');
   const [sightingNotes, setSightingNotes] = useState('');
+  const [submittingSighting, setSubmittingSighting] = useState(false);
 
-  // Report Form State
   const [fullName, setFullName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('Male');
   const [lastSeenLocation, setLastSeenLocation] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  useEffect(() => {
+    loadMissingPersons();
+  }, []);
+
+  const loadMissingPersons = async () => {
+    try {
+      setLoading(true);
+      const data = await getMissingPersons({ verifiedOnly: true });
+      setMissingPersons(data);
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to load missing persons');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCall = (phone) => {
     Linking.openURL(`tel:${phone}`);
@@ -89,69 +63,89 @@ export default function MissingPersonScreen({ onNavigate }) {
     setSightingNotes('');
   };
 
-  const handleSubmitSighting = () => {
+  const handleSubmitSighting = async () => {
     if (!sightingLocation) {
       Alert.alert('Missing Location', 'Please enter where you saw this person.');
       return;
     }
 
-    setMissingPersons((prev) =>
-      prev.map((p) => (p.id === selectedPerson.id ? { ...p, sightingsCount: p.sightingsCount + 1 } : p))
-    );
+    try {
+      setSubmittingSighting(true);
+      await createSighting(selectedPerson.id, {
+        location: sightingLocation,
+        notes: sightingNotes,
+      });
 
-    Alert.alert(
-      'Sighting Reported! 📍',
-      `Thank you! Your report for ${selectedPerson.fullName} has been sent to family members and emergency officers.`
-    );
-    setSelectedPerson(null);
+      setMissingPersons((prev) =>
+        prev.map((p) =>
+          p.id === selectedPerson.id ? { ...p, sightingsCount: (p.sightingsCount || 0) + 1 } : p
+        )
+      );
+
+      Alert.alert(
+        'Sighting Reported! 📍',
+        `Thank you! Your report for ${selectedPerson.fullName} has been sent to family members and emergency officers.`
+      );
+      setSelectedPerson(null);
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to submit sighting');
+    } finally {
+      setSubmittingSighting(false);
+    }
   };
 
-  const handleCreateReport = () => {
+  const handleCreateReport = async () => {
     if (!fullName || !lastSeenLocation || !contactPhone) {
       Alert.alert('Incomplete Form', 'Please provide the missing person full name, last seen location, and contact phone.');
       return;
     }
 
-    const newPerson = {
-      id: `mp_${Date.now()}`,
-      fullName,
-      age: Number(age) || 0,
-      gender,
-      lastSeenLocation,
-      lastSeenDate: 'Today',
-      description,
-      contactPhone,
-      displayPhone: contactPhone,
-      status: 'ACTIVE',
-      verifiedByAdmin: false,
-      sightingsCount: 0,
-    };
+    try {
+      setSubmittingReport(true);
+      const result = await createMissingPerson({
+        fullName,
+        age: Number(age) || 0,
+        gender,
+        lastSeenLocation,
+        description,
+        contactPhone,
+      });
 
-    setMissingPersons([newPerson, ...missingPersons]);
-    Alert.alert(
-      'Report Submitted 📢',
-      'Your missing person alert has been recorded. It will be shared with nearby community members after quick verification.'
-    );
+      const newPerson = {
+        ...result.report,
+        sightingsCount: 0,
+      };
 
-    setFullName('');
-    setAge('');
-    setLastSeenLocation('');
-    setContactPhone('');
-    setDescription('');
-    setActiveTab('ALERTS');
+      setMissingPersons([newPerson, ...missingPersons]);
+      Alert.alert(
+        'Report Submitted 📢',
+        'Your missing person alert has been recorded. It will be shared with nearby community members after quick verification.'
+      );
+
+      setFullName('');
+      setAge('');
+      setLastSeenLocation('');
+      setContactPhone('');
+      setDescription('');
+      setActiveTab('ALERTS');
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to submit report');
+    } finally {
+      setSubmittingReport(false);
+    }
   };
 
   const filteredPersons = missingPersons.filter(
     (p) =>
-      p.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.lastSeenLocation.toLowerCase().includes(searchQuery.toLowerCase())
+      p.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.lastSeenLocation?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const renderPersonCard = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{item.fullName.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{item.fullName?.charAt(0)}</Text>
         </View>
 
         <View style={styles.headerInfo}>
@@ -167,9 +161,9 @@ export default function MissingPersonScreen({ onNavigate }) {
           </Text>
         </View>
 
-        <View style={item.status === 'RESOLVED' ? styles.statusFound : styles.statusActive}>
-          <Text style={item.status === 'RESOLVED' ? styles.statusFoundText : styles.statusActiveText}>
-            {item.status === 'RESOLVED' ? 'FOUND' : 'MISSING'}
+        <View style={item.status === 'RESOLVED' || item.status === 'FOUND' ? styles.statusFound : styles.statusActive}>
+          <Text style={item.status === 'RESOLVED' || item.status === 'FOUND' ? styles.statusFoundText : styles.statusActiveText}>
+            {item.status === 'RESOLVED' || item.status === 'FOUND' ? 'FOUND' : 'MISSING'}
           </Text>
         </View>
       </View>
@@ -177,7 +171,7 @@ export default function MissingPersonScreen({ onNavigate }) {
       <View style={styles.detailRow}>
         <Ionicons name="location-outline" size={15} color="#DC2626" />
         <Text style={styles.detailText}>
-          Last seen: <Text style={{ fontWeight: '700' }}>{item.lastSeenLocation}</Text> ({item.lastSeenDate})
+          Last seen: <Text style={{ fontWeight: '700' }}>{item.lastSeenLocation}</Text> ({item.lastSeenDate || 'Today'})
         </Text>
       </View>
 
@@ -185,7 +179,7 @@ export default function MissingPersonScreen({ onNavigate }) {
 
       <View style={styles.sightingsBar}>
         <Feather name="eye" size={14} color="#6B7280" />
-        <Text style={styles.sightingsText}>{item.sightingsCount} community sighting reports</Text>
+        <Text style={styles.sightingsText}>{item.sightingsCount || 0} community sighting reports</Text>
       </View>
 
       <View style={styles.cardActions}>
@@ -251,13 +245,20 @@ export default function MissingPersonScreen({ onNavigate }) {
             </View>
           </View>
 
-          <FlatList
-            data={filteredPersons}
-            keyExtractor={(item) => item.id}
-            renderItem={renderPersonCard}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007A43" />
+              <Text style={styles.loadingText}>Loading alerts...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredPersons}
+              keyExtractor={(item) => item.id}
+              renderItem={renderPersonCard}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </>
       ) : (
         <ScrollView contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
@@ -327,8 +328,12 @@ export default function MissingPersonScreen({ onNavigate }) {
             onChangeText={setDescription}
           />
 
-          <TouchableOpacity style={styles.submitBtn} onPress={handleCreateReport}>
-            <Text style={styles.submitBtnText}>Publish Missing Person Alert</Text>
+          <TouchableOpacity
+            style={[styles.submitBtn, submittingReport && styles.submitBtnDisabled]}
+            onPress={handleCreateReport}
+            disabled={submittingReport}
+          >
+            <Text style={styles.submitBtnText}>{submittingReport ? 'Submitting...' : 'Publish Missing Person Alert'}</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -363,8 +368,12 @@ export default function MissingPersonScreen({ onNavigate }) {
                 <Text style={styles.cancelModalText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.confirmModalBtn} onPress={handleSubmitSighting}>
-                <Text style={styles.confirmModalText}>Submit Sighting</Text>
+              <TouchableOpacity
+                style={styles.confirmModalBtn}
+                onPress={handleSubmitSighting}
+                disabled={submittingSighting}
+              >
+                <Text style={styles.confirmModalText}>{submittingSighting ? 'Submitting...' : 'Submit Sighting'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -418,6 +427,8 @@ const styles = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#111827' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
   listContent: { padding: 16 },
   card: {
     backgroundColor: '#FFFFFF',
@@ -510,6 +521,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  submitBtnDisabled: { opacity: 0.7 },
   submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20 },
@@ -521,3 +533,5 @@ const styles = StyleSheet.create({
   confirmModalBtn: { backgroundColor: '#007A43', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 },
   confirmModalText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });
+
+
