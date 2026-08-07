@@ -27,9 +27,11 @@ import EmergencyContactsScreen from './screens/EmergencyContactsScreen';
 import AboutScreen from './screens/AboutScreen';
 import HelpScreen from './screens/HelpScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import BloodDonorProfileScreen from './screens/BloodDonorProfileScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('LOADING');
+  const [currentScreenParams, setCurrentScreenParams] = useState(null);
   const [initializing, setInitializing] = useState(true);
   const [screenStack, setScreenStack] = useState([]);
   const hasResolvedAuth = useRef(false);
@@ -67,7 +69,7 @@ export default function App() {
     };
   }, []);
 
-  const handleNavigate = (screen, options = {}) => {
+  const handleNavigate = (screen, params = null, options = {}) => {
     const { replace = false } = options;
     hasResolvedAuth.current = true;
     setScreenStack(prev => {
@@ -77,6 +79,7 @@ export default function App() {
       return [...prev, currentScreen];
     });
     setCurrentScreen(screen);
+    setCurrentScreenParams(params);
     setInitializing(false);
   };
 
@@ -128,6 +131,8 @@ export default function App() {
         return <FindHospitalScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'BloodDonors':
         return <BloodDonorsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
+      case 'BloodDonorProfile':
+        return <BloodDonorProfileScreen onNavigate={handleNavigate} onGoBack={handleGoBack} routeParams={currentScreenParams} />;
       case 'LiveLocation':
         return <LiveLocationScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'FindPharmacy':
