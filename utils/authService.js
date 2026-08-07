@@ -188,6 +188,11 @@ export async function createSighting(id, payload) {
   return data;
 }
 
+export async function getIncidentById(id) {
+  const data = await request(`/incidents/${encodeURIComponent(id)}`);
+  return data.incident || null;
+}
+
 export async function getIncidents({ type, status, search } = {}) {
   const params = new URLSearchParams();
   if (type) params.set('type', type);

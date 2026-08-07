@@ -28,6 +28,7 @@ import AboutScreen from './screens/AboutScreen';
 import HelpScreen from './screens/HelpScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import BloodDonorProfileScreen from './screens/BloodDonorProfileScreen';
+import ReportDetailScreen from './screens/ReportDetailScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('LOADING');
@@ -125,6 +126,8 @@ export default function App() {
         return <SosTriggerScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'Alerts':
         return <AlertsScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
+      case 'ReportDetail':
+        return <ReportDetailScreen onNavigate={handleNavigate} onGoBack={handleGoBack} routeParams={currentScreenParams} />;
       case 'ReportIncident':
         return <ReportIncidentScreen onNavigate={handleNavigate} onGoBack={handleGoBack} />;
       case 'FindHospital':

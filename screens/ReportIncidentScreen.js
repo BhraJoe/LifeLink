@@ -4,18 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { createIncident } from '../utils/authService';
+import { createIncident, getUser } from '../utils/authService';
 
-export default function ReportIncidentScreen({ onNavigate }) {
+export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
   const [selectedType, setSelectedType] = useState('Accident');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getCurrentLocation();
+    getUser().then(setUser);
+  }, []);
 
   const incidentTypes = [
     { id: 'Accident', label: 'Accident', icon: 'car-crash' },
@@ -24,10 +30,6 @@ export default function ReportIncidentScreen({ onNavigate }) {
     { id: 'Pothole', label: 'Pothole', icon: 'road' },
     { id: 'Other', label: 'Other', icon: 'ellipsis-h' },
   ];
-
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
 
   const getCurrentLocation = async () => {
     try {
@@ -63,19 +65,20 @@ export default function ReportIncidentScreen({ onNavigate }) {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        allowsEditing: false,
         aspect: [4, 3],
         quality: 0.8,
         base64: true,
+        allowsMultipleSelection: true,
       });
 
-      if (!result.canceled && result.assets?.[0]) {
-        const asset = result.assets[0];
-        setImage({
+      if (!result.canceled && result.assets?.length) {
+        const picked = result.assets.map((asset) => ({
           uri: asset.uri,
           base64: asset.base64,
           type: asset.mimeType || 'image/jpeg',
-        });
+        }));
+        setImages((prev) => [...prev, ...picked].slice(0, 5));
       }
     } catch (err) {
       Alert.alert('Error', 'Failed to pick image');
@@ -98,15 +101,20 @@ export default function ReportIncidentScreen({ onNavigate }) {
         location,
         latitude,
         longitude,
-        image: image?.base64 || null,
+        images: images.map((img) => img.base64).filter(Boolean),
+        reportedBy: user?.fullName || 'anonymous',
       };
 
       await createIncident(payload);
-      Alert.alert('Success', 'Incident reported successfully. Thank you for keeping the community safe.');
       setTitle('');
       setDescription('');
-      setImage(null);
+      setImages([]);
       setSelectedType('Accident');
+      if (onGoBack) {
+        onGoBack();
+      } else {
+        onNavigate('Home');
+      }
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to submit incident report');
     } finally {
@@ -120,7 +128,7 @@ export default function ReportIncidentScreen({ onNavigate }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onNavigate('Home')}>
+        <TouchableOpacity onPress={onGoBack || (() => onNavigate('Home'))}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Report Incident</Text>
@@ -195,14 +203,14 @@ export default function ReportIncidentScreen({ onNavigate }) {
             <Feather name="camera" size={24} color="#6B7280" />
           </TouchableOpacity>
 
-          {image && (
-            <View style={styles.photoThumb}>
-              <Image source={{ uri: image.uri }} style={styles.thumbImg} />
-              <TouchableOpacity style={styles.closeBadge} onPress={() => setImage(null)}>
+          {images.map((img, index) => (
+            <View key={index} style={styles.photoThumb}>
+              <Image source={{ uri: img.uri }} style={styles.thumbImg} />
+              <TouchableOpacity style={styles.closeBadge} onPress={() => setImages((prev) => prev.filter((_, i) => i !== index))}>
                 <Ionicons name="close" size={12} color="#FFF" />
               </TouchableOpacity>
             </View>
-          )}
+          ))}
         </View>
 
         {/* Submit */}
