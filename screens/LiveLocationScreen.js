@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   errorBanner: { position: 'absolute', top: 16, left: 16, right: 16, zIndex: 10, backgroundColor: '#FEE2E2', borderRadius: 12, padding: 12 },
   errorText: { color: '#991B1B', fontSize: 13, fontWeight: '600' },
   mapOverlayCenter: { position: 'absolute', top: '40%', left: '42%' },
-  startPrompt: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  startPrompt: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, elevation: 6, boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)' },
   startPromptText: { fontSize: 14, color: '#374151', textAlign: 'center', marginTop: 12, marginBottom: 16, paddingHorizontal: 10 },
   startButton: { backgroundColor: '#007A43', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
   startButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
