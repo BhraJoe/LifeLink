@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4002/api';
 const BASE_URL = API_URL.replace(/\/api$/, '');
 const TOKEN_KEY = 'lifelink_token';
 const USER_KEY = 'lifelink_user';
