@@ -28,7 +28,10 @@ export default function HomeScreen({ onNavigate }) {
 
       {/* Top Welcome Bar */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {greetingName}! 👋</Text>
+        <View style={styles.greetingContainer}>
+          <MaterialIcons name="waving-hand" size={20} color="#111827" />
+          <Text style={styles.greeting}>Hello, {greetingName}!</Text>
+        </View>
         <TouchableOpacity style={styles.bellButton} onPress={() => onNavigate('DisasterAlerts')}>
           <Feather name="bell" size={24} color="#111827" />
         </TouchableOpacity>
@@ -162,6 +165,7 @@ export default function HomeScreen({ onNavigate }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  greetingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   greeting: { fontSize: 22, fontWeight: '800', color: '#111827' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
   sosCard: { backgroundColor: '#DC2626', borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 16 },
