@@ -502,7 +502,13 @@ router.get('/incidents/:id/comments', authMiddleware, (req, res) => {
   if (!incident) {
     return res.status(404).json({ message: 'Incident not found' });
   }
-  res.json({ comments: incident.comments || [] });
+  const enrichedComments = (incident.comments || []).map((c) => {
+    const authorUser = c.userId ? users.get(c.userId) : null;
+    const avatar = authorUser && authorUser.avatar ? authorUser.avatar : c.avatar;
+    const author = authorUser ? (authorUser.fullName || authorUser.email || c.author) : (c.author || 'User');
+    return { ...c, author, avatar };
+  });
+  res.json({ comments: enrichedComments });
 });
 
 router.post('/incidents/:id/comments', authMiddleware, async (req, res) => {
