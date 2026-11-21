@@ -14,13 +14,15 @@ dotenv.config();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = join(__dirname, 'data', 'users.json');
 const SOS_DATA_FILE = join(__dirname, 'data', 'sos-events.json');
+const INCIDENTS_DATA_FILE = join(__dirname, 'data', 'incidents.json');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'lifelink-secret-key-change-in-production';
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const router = express.Router();
 
@@ -61,6 +63,22 @@ async function loadSosEvents() {
 async function persistSosEvents() {
   await mkdir(dirname(SOS_DATA_FILE), { recursive: true });
   await writeFile(SOS_DATA_FILE, JSON.stringify(Array.from(sosEvents.values()), null, 2));
+}
+
+async function loadIncidents() {
+  try {
+    const raw = await readFile(INCIDENTS_DATA_FILE, 'utf-8');
+    for (const incident of JSON.parse(raw)) {
+      incidents.set(incident.id, incident);
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
+
+async function persistIncidents() {
+  await mkdir(dirname(INCIDENTS_DATA_FILE), { recursive: true });
+  await writeFile(INCIDENTS_DATA_FILE, JSON.stringify(Array.from(incidents.values()), null, 2));
 }
 
 const loginSchema = z.object({
@@ -441,14 +459,15 @@ router.get('/hospitals/search', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/incidents', authMiddleware, (req, res) => {
-  const { title, type, description, location, severity } = req.body;
+router.post('/incidents', authMiddleware, async (req, res) => {
+  const { title, type, description, location, severity, images } = req.body;
   const incident = {
     id: Date.now().toString(),
     title: title || 'Untitled',
     type: type || 'general',
     description: description || '',
     location: location || {},
+    images: Array.isArray(images) ? images : [],
     severity: severity || 'medium',
     status: 'active',
     createdBy: req.user.id,
@@ -456,7 +475,86 @@ router.post('/incidents', authMiddleware, (req, res) => {
   };
 
   incidents.set(incident.id, incident);
+  await persistIncidents();
   res.status(201).json({ incident });
+});
+
+router.patch('/incidents/:id/like', authMiddleware, async (req, res) => {
+  const incident = incidents.get(req.params.id);
+  if (!incident) {
+    return res.status(404).json({ message: 'Incident not found' });
+  }
+
+  const { userId } = req.user;
+  const alreadyLiked = incident.likedBy && incident.likedBy.includes(userId);
+  if (alreadyLiked) {
+    incident.likedBy = incident.likedBy.filter(id => id !== userId);
+  } else {
+    incident.likedBy = incident.likedBy ? [...incident.likedBy, userId] : [userId];
+  }
+  incident.likes = (incident.likedBy || []).length;
+  await persistIncidents();
+  res.json({ incident });
+});
+
+router.get('/incidents/:id/comments', authMiddleware, (req, res) => {
+  const incident = incidents.get(req.params.id);
+  if (!incident) {
+    return res.status(404).json({ message: 'Incident not found' });
+  }
+  res.json({ comments: incident.comments || [] });
+});
+
+router.post('/incidents/:id/comments', authMiddleware, async (req, res) => {
+  const incident = incidents.get(req.params.id);
+  if (!incident) {
+    return res.status(404).json({ message: 'Incident not found' });
+  }
+
+  const { text } = req.body;
+  if (!text || text.trim() === '') {
+    return res.status(400).json({ message: 'Comment text is required' });
+  }
+
+  const author = req.user.fullName || req.user.email || 'User';
+
+  const comment = {
+    id: Date.now().toString(),
+    text: text.trim(),
+    userId: req.user.id,
+    author,
+    avatar: req.user.avatar || null,
+    createdAt: new Date().toISOString(),
+  };
+
+  incident.comments = incident.comments || [];
+  incident.comments.push(comment);
+  await persistIncidents();
+  res.json({ incident });
+});
+
+router.patch('/incidents/:id/comments/:commentId/like', authMiddleware, async (req, res) => {
+  const incident = incidents.get(req.params.id);
+  if (!incident) {
+    return res.status(404).json({ message: 'Incident not found' });
+  }
+
+  const comment = incident.comments?.find(c => c.id === req.params.commentId);
+  if (!comment) {
+    return res.status(404).json({ message: 'Comment not found' });
+  }
+
+  const { userId } = req.user;
+  comment.likedBy = comment.likedBy || [];
+  const alreadyLiked = comment.likedBy.includes(userId);
+  if (alreadyLiked) {
+    comment.likedBy = comment.likedBy.filter(id => id !== userId);
+  } else {
+    comment.likedBy.push(userId);
+  }
+  comment.likes = comment.likedBy.length;
+  await persistIncidents();
+  res.json({ incident, comment });
 });
 
 router.patch('/incidents/:id/status', authMiddleware, (req, res) => {
@@ -539,6 +637,7 @@ app.use('/api', router);
 async function startServer() {
   await loadUsers();
   await loadSosEvents();
+  await loadIncidents();
   app.listen(PORT, () => {
     console.log(`LifeLink backend running on http://localhost:${PORT}`);
   });

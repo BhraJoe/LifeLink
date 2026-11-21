@@ -64,7 +64,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'images',
         allowsEditing: false,
         aspect: [4, 3],
         quality: 0.8,
@@ -81,13 +81,14 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
         setImages((prev) => [...prev, ...picked].slice(0, 5));
       }
     } catch (err) {
+      console.error('Image picker error:', err);
       Alert.alert('Error', 'Failed to pick image');
     }
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !location) {
-      Alert.alert('Incomplete Form', 'Please fill in the title, description, and location.');
+    if (!title || !description || !location || images.length === 0) {
+      Alert.alert('Incomplete Form', 'Please fill in the title, description, location, and add at least one photo.');
       return;
     }
 
@@ -116,6 +117,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
         onNavigate('Home');
       }
     } catch (err) {
+      console.error('Submit incident error:', err);
       Alert.alert('Error', err.message || 'Failed to submit incident report');
     } finally {
       setSubmitting(false);
@@ -200,7 +202,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
         </View>
 
         {/* Photos Grid */}
-        <Text style={styles.sectionTitle}>Add Photos <Text style={styles.optional}>(Optional)</Text></Text>
+        <Text style={styles.sectionTitle}>Add Photos</Text>
         <View style={styles.photoGrid}>
           <TouchableOpacity style={styles.addPhotoCard} onPress={pickImage}>
             <Feather name="camera" size={24} color="#6B7280" />

@@ -19,6 +19,11 @@ function getNotifications() {
 }
 
 export async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'web') {
+    console.log('Push notifications not supported on web');
+    return null;
+  }
+
   if (Platform.OS === 'android' && Constants.expoGoConfig) {
     return null;
   }

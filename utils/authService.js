@@ -26,6 +26,7 @@ const AVATAR_FALLBACK = 'https://i.pravatar.cc/120?img=12';
 export function getAvatarUri(avatar) {
   if (!avatar) return AVATAR_FALLBACK;
   if (/^https?:\/\//.test(avatar)) return avatar;
+  if (avatar.startsWith('data:')) return avatar;
   return `${BASE_URL}/uploads/${avatar}`;
 }
 
@@ -51,6 +52,7 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    console.error('API error:', { status: response.status, data });
     const message = data.message || data.error || 'Something went wrong';
     throw new Error(message);
   }
@@ -242,6 +244,33 @@ export async function createIncident(payload) {
   const data = await request('/incidents', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+export async function toggleLikeIncident(id) {
+  const data = await request(`/incidents/${encodeURIComponent(id)}/like`, {
+    method: 'PATCH',
+  });
+  return data;
+}
+
+export async function getIncidentComments(id) {
+  const data = await request(`/incidents/${encodeURIComponent(id)}/comments`);
+  return data;
+}
+
+export async function addIncidentComment(id, text) {
+  const data = await request(`/incidents/${encodeURIComponent(id)}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+  return data;
+}
+
+export async function toggleCommentLike(incidentId, commentId) {
+  const data = await request(`/incidents/${encodeURIComponent(incidentId)}/comments/${encodeURIComponent(commentId)}/like`, {
+    method: 'PATCH',
   });
   return data;
 }
