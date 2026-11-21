@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
 import { getEmergencyContacts, saveEmergencyContacts } from '../utils/emergencyContacts';
+import { isValidGhanaPhoneNumber, sanitizeName, sanitizePhoneNumber } from '../utils/validation';
 
 const OFFICIAL_HOTLINES = [
   {
@@ -96,9 +97,8 @@ export default function EmergencyContactsScreen({ onNavigate, onGoBack }) {
       return;
     }
 
-    const digitCount = phone.replace(/\D/g, '').length;
-    if (!/^\+?[\d\s().-]+$/.test(phone) || digitCount < 7 || digitCount > 15) {
-      Alert.alert('Invalid phone number', 'Enter a phone number with 7 to 15 digits.');
+    if (!isValidGhanaPhoneNumber(phone)) {
+      Alert.alert('Invalid phone number', 'Enter 0241234567 or +233241234567.');
       return;
     }
 
@@ -260,7 +260,10 @@ export default function EmergencyContactsScreen({ onNavigate, onGoBack }) {
               style={styles.input}
               placeholder="e.g. Kojo Mensah"
               value={newName}
-              onChangeText={setNewName}
+              onChangeText={(value) => setNewName(sanitizeName(value))}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={100}
             />
 
             <Text style={styles.inputLabel}>Relationship</Text>
@@ -274,10 +277,11 @@ export default function EmergencyContactsScreen({ onNavigate, onGoBack }) {
             <Text style={styles.inputLabel}>Phone Number *</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. 0241112233"
+              placeholder="e.g. 0241112233 or +233241112233"
               keyboardType="phone-pad"
               value={newPhone}
-              onChangeText={setNewPhone}
+              onChangeText={(value) => setNewPhone(sanitizePhoneNumber(value))}
+              maxLength={13}
             />
 
             <View style={styles.modalActions}>

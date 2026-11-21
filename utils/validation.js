@@ -9,31 +9,51 @@ export const loginSchema = z.object({
     .min(6, 'Password must be at least 6 characters'),
 });
 
+export const sanitizePhoneNumber = (value) => {
+  const input = String(value ?? '').trim();
+  if (input.startsWith('+')) {
+    return `+${input.slice(1).replace(/\D/g, '')}`.slice(0, 13);
+  }
+  return input.replace(/\D/g, '').slice(0, 12);
+};
+
+export const sanitizeDigits = (value, maxLength = 3) =>
+  String(value ?? '').replace(/\D/g, '').slice(0, maxLength);
+
+export const sanitizeName = (value) =>
+  String(value ?? '').replace(/[^a-zA-Z\s'-]/g, '').replace(/\s+/g, ' ').slice(0, 100);
+
+export const isValidGhanaPhoneNumber = (value) =>
+  /^(?:0\d{9}|(?:\+?233)\d{9})$/.test(String(value ?? '').trim());
+
+const ghanaPhoneNumber = z
+  .string({ required_error: 'Phone number is required' })
+  .regex(/^(?:0\d{9}|(?:\+?233)\d{9})$/, 'Enter 0241234567 or +233241234567');
+
+const personName = z
+  .string({ required_error: 'Full name is required' })
+  .trim()
+  .min(2, 'Full name must contain at least 2 characters')
+  .max(100, 'Full name is too long')
+  .regex(/^[a-zA-Z\s'-]+$/, 'Full name must contain letters only');
+
 export const signUpSchema = z.object({
-  fullName: z
-    .string({ required_error: 'Full name is required' })
-    .min(1, 'Full name is required'),
+  fullName: personName,
   email: z
     .string({ required_error: 'Email is required' })
     .email('Please enter a valid email'),
-  phoneNumber: z
-    .string({ required_error: 'Phone number is required' })
-    .min(10, 'Please enter a valid phone number'),
+  phoneNumber: ghanaPhoneNumber,
   password: z
     .string({ required_error: 'Password is required' })
     .min(6, 'Password must be at least 6 characters'),
 });
 
 export const editProfileSchema = z.object({
-  fullName: z
-    .string({ required_error: 'Full name is required' })
-    .min(1, 'Full name is required'),
+  fullName: personName,
   email: z
     .string({ required_error: 'Email is required' })
     .email('Please enter a valid email'),
-  phoneNumber: z
-    .string({ required_error: 'Phone number is required' })
-    .min(10, 'Please enter a valid phone number'),
+  phoneNumber: ghanaPhoneNumber,
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
 })

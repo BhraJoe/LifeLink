@@ -81,6 +81,8 @@ export default function LoginScreen({ onNavigate }) {
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
             />
           </View>
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}

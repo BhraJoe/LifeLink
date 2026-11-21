@@ -69,9 +69,9 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
+  fullName: z.string().trim().min(2, 'Full name must contain at least 2 characters').max(100).regex(/^[a-zA-Z\s'-]+$/, 'Full name must contain letters only'),
   email: z.string().email('Invalid email'),
-  phoneNumber: z.string().min(10, 'Invalid phone number'),
+  phoneNumber: z.string().regex(/^(?:0\d{9}|(?:\+?233)\d{9})$/, 'Enter 0241234567 or +233241234567'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -80,9 +80,9 @@ const forgotPasswordSchema = z.object({
 });
 
 const editProfileSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
+  fullName: z.string().trim().min(2, 'Full name must contain at least 2 characters').max(100).regex(/^[a-zA-Z\s'-]+$/, 'Full name must contain letters only'),
   email: z.string().email('Invalid email'),
-  phoneNumber: z.string().min(10, 'Invalid phone number'),
+  phoneNumber: z.string().regex(/^(?:0\d{9}|(?:\+?233)\d{9})$/, 'Enter 0241234567 or +233241234567'),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
 }).refine(data => !data.password || data.password === data.confirmPassword, {
@@ -95,6 +95,30 @@ const sosEventSchema = z.object({
   longitude: z.number().finite().min(-180).max(180),
   accuracy: z.number().finite().nonnegative().optional(),
 });
+const hospitalSearchSchema = z.object({
+  q: z.string().trim().min(2).max(120),
+});
+
+let nominatimQueue = Promise.resolve();
+let lastNominatimRequestAt = 0;
+
+function fetchNominatim(url) {
+  const request = nominatimQueue.then(async () => {
+    const waitMs = Math.max(0, 1000 - (Date.now() - lastNominatimRequestAt));
+    if (waitMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+    lastNominatimRequestAt = Date.now();
+    return fetch(url, {
+      headers: {
+        'User-Agent': 'LifeLink/1.0 (+https://github.com/BhraJoe/LifeLink)',
+        'Accept-Language': 'en',
+      },
+    });
+  });
+  nominatimQueue = request.then(() => undefined, () => undefined);
+  return request;
+}
 
 function generateToken(user) {
   return jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
@@ -310,7 +334,20 @@ router.get('/missing-persons', authMiddleware, (req, res) => {
 });
 
 router.post('/missing-persons', authMiddleware, (req, res) => {
-  const { fullName, age, gender, lastSeenLocation, description, status, contactInfo } = req.body;
+  const result = z.object({
+    fullName: z.string().trim().min(2).max(100).regex(/^[a-zA-Z\s'-]+$/),
+    age: z.union([z.number().int().min(0).max(120), z.string().regex(/^(|[0-9]|[1-9]\d|1\d{2}|120)$/)]).optional(),
+    gender: z.enum(['Male', 'Female']).optional(),
+    lastSeenLocation: z.string().trim().min(1).max(200),
+    description: z.string().max(1000).optional(),
+    contactPhone: z.string().regex(/^(?:0\d{9}|(?:\+?233)\d{9})$/),
+  }).safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({ message: result.error.errors[0].message });
+  }
+
+  const { fullName, age, gender, lastSeenLocation, description, contactPhone } = result.data;
   const record = {
     id: Date.now().toString(),
     fullName: fullName || 'Unknown',
@@ -320,7 +357,7 @@ router.post('/missing-persons', authMiddleware, (req, res) => {
     description: description || '',
     status: status || 'missing',
     verified: false,
-    contactInfo: contactInfo || {},
+    contactPhone,
     sightings: [],
     createdAt: new Date().toISOString(),
   };
@@ -366,6 +403,42 @@ router.get('/incidents/:id', authMiddleware, (req, res) => {
     return res.status(404).json({ message: 'Incident not found' });
   }
   res.json({ incident });
+});
+
+router.get('/hospitals/search', authMiddleware, async (req, res) => {
+  const parsed = hospitalSearchSchema.safeParse({ q: req.query.q });
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Search query must be between 2 and 120 characters' });
+  }
+
+  const query = parsed.data.q;
+  const searchTerms = /\bhospital\b/i.test(query) ? query : `${query} hospital`;
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    addressdetails: '1',
+    extratags: '1',
+    limit: '20',
+    q: searchTerms,
+  });
+
+  try {
+    const response = await fetchNominatim(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`
+    );
+    if (!response.ok) {
+      console.error(`Hospital search provider returned ${response.status}`);
+      return res.status(502).json({ message: 'Hospital search service is temporarily unavailable' });
+    }
+
+    const results = await response.json();
+    if (!Array.isArray(results)) {
+      throw new Error('Hospital search provider returned an invalid response');
+    }
+    res.json({ results });
+  } catch (error) {
+    console.error('Hospital search proxy failed:', error);
+    res.status(502).json({ message: 'Hospital search service is temporarily unavailable' });
+  }
 });
 
 router.post('/incidents', authMiddleware, (req, res) => {

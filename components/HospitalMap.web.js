@@ -6,6 +6,7 @@ const DEFAULT_CENTER = { latitude: 5.6037, longitude: -0.187 };
 export default function HospitalMap({ hospitals, userLocation, selectedHospital }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const hospitalMarkersRef = useRef(null);
   const userMarkerRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
 
@@ -69,7 +70,20 @@ export default function HospitalMap({ hospitals, userLocation, selectedHospital 
         mapRef.current = null;
       }
     };
-  }, [hospitals]);
+  }, []);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !window.L) return;
+    if (hospitalMarkersRef.current) {
+      hospitalMarkersRef.current.remove();
+    }
+    hospitalMarkersRef.current = window.L.layerGroup(
+      hospitals.map((hospital) =>
+        window.L.marker([hospital.latitude, hospital.longitude])
+          .bindPopup(`<b>${hospital.name}</b><br/>${hospital.address}`)
+      )
+    ).addTo(mapRef.current);
+  }, [hospitals, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;

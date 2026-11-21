@@ -11,7 +11,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { signUpSchema, validate } from '../utils/validation';
+import { signUpSchema, validate, sanitizeName, sanitizePhoneNumber } from '../utils/validation';
 import { register } from '../utils/authService';
 
 export default function SignUpScreen({ onNavigate }) {
@@ -81,7 +81,10 @@ export default function SignUpScreen({ onNavigate }) {
               placeholder="Enter your full name"
               placeholderTextColor="#9EA5B1"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(value) => setFullName(sanitizeName(value))}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={100}
             />
           </View>
           {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
@@ -116,11 +119,12 @@ export default function SignUpScreen({ onNavigate }) {
                 styles.input,
                 errors.phoneNumber && styles.inputError
               ]}
-              placeholder="Enter your phone number"
+              placeholder="0241234567 or +233241234567"
               placeholderTextColor="#9EA5B1"
               keyboardType="phone-pad"
               value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              onChangeText={(value) => setPhoneNumber(sanitizePhoneNumber(value))}
+              maxLength={13}
             />
           </View>
           {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}

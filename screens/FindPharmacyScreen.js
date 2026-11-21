@@ -185,6 +185,7 @@ export default function FindPharmacyScreen({ onNavigate }) {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#9CA3AF"
+            maxLength={120}
           />
           {searchQuery !== '' && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>

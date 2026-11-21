@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
 import { getMissingPersons, createMissingPerson, createSighting } from '../utils/authService';
+import { isValidGhanaPhoneNumber, sanitizeDigits, sanitizeName, sanitizePhoneNumber } from '../utils/validation';
 
 export default function MissingPersonScreen({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('ALERTS');
@@ -97,6 +98,18 @@ export default function MissingPersonScreen({ onNavigate }) {
   const handleCreateReport = async () => {
     if (!fullName || !lastSeenLocation || !contactPhone) {
       Alert.alert('Incomplete Form', 'Please provide the missing person full name, last seen location, and contact phone.');
+      return;
+    }
+    if (!/^[a-zA-Z\s'-]+$/.test(fullName.trim()) || fullName.trim().length < 2) {
+      Alert.alert('Invalid name', 'Enter a valid full name using letters only.');
+      return;
+    }
+    if (!isValidGhanaPhoneNumber(contactPhone)) {
+      Alert.alert('Invalid phone number', 'Enter 0241234567 or +233241234567.');
+      return;
+    }
+    if (age && (Number(age) < 1 || Number(age) > 120)) {
+      Alert.alert('Invalid age', 'Age must be between 1 and 120.');
       return;
     }
 
@@ -241,6 +254,7 @@ export default function MissingPersonScreen({ onNavigate }) {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholderTextColor="#9CA3AF"
+                maxLength={120}
               />
             </View>
           </View>
@@ -270,7 +284,10 @@ export default function MissingPersonScreen({ onNavigate }) {
             style={styles.input}
             placeholder="e.g. Kwame Mensah"
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={(value) => setFullName(sanitizeName(value))}
+            autoCapitalize="words"
+            autoCorrect={false}
+            maxLength={100}
           />
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -281,7 +298,8 @@ export default function MissingPersonScreen({ onNavigate }) {
                 placeholder="e.g. 14"
                 keyboardType="numeric"
                 value={age}
-                onChangeText={setAge}
+                onChangeText={(value) => setAge(sanitizeDigits(value, 3))}
+                maxLength={3}
               />
             </View>
 
@@ -312,10 +330,11 @@ export default function MissingPersonScreen({ onNavigate }) {
           <Text style={styles.inputLabel}>Family / Contact Phone Number *</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. 0249991122"
+            placeholder="e.g. 0249991122 or +233249991122"
             keyboardType="phone-pad"
             value={contactPhone}
-            onChangeText={setContactPhone}
+            onChangeText={(value) => setContactPhone(sanitizePhoneNumber(value))}
+            maxLength={13}
           />
 
           <Text style={styles.inputLabel}>Clothing & Appearance Description</Text>
@@ -353,6 +372,7 @@ export default function MissingPersonScreen({ onNavigate }) {
               placeholder="e.g. Near Achimota Overpass"
               value={sightingLocation}
               onChangeText={setSightingLocation}
+              maxLength={200}
             />
 
             <Text style={styles.inputLabel}>Additional Notes / Time</Text>
@@ -361,6 +381,7 @@ export default function MissingPersonScreen({ onNavigate }) {
               placeholder="e.g. Saw him around 2 PM heading towards station"
               value={sightingNotes}
               onChangeText={setSightingNotes}
+              maxLength={500}
             />
 
             <View style={styles.modalActions}>

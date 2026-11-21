@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { editProfileSchema, validate } from '../utils/validation';
+import { editProfileSchema, validate, sanitizeName, sanitizePhoneNumber } from '../utils/validation';
 import { getUser, updateUser, uploadAvatar, getAvatarUri } from '../utils/authService';
 
 export default function EditProfileScreen({ onNavigate }) {
@@ -188,7 +188,10 @@ export default function EditProfileScreen({ onNavigate }) {
               placeholder="Enter your full name"
               placeholderTextColor="#9EA5B1"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(value) => setFullName(sanitizeName(value))}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={100}
             />
           </View>
           {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
@@ -217,11 +220,12 @@ export default function EditProfileScreen({ onNavigate }) {
           <View style={[styles.inputContainer, errors.phoneNumber && styles.inputError]}>
             <TextInput
               style={styles.input}
-              placeholder="Enter your phone number"
+              placeholder="0241234567 or +233241234567"
               placeholderTextColor="#9EA5B1"
               keyboardType="phone-pad"
               value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              onChangeText={(value) => setPhoneNumber(sanitizePhoneNumber(value))}
+              maxLength={13}
             />
           </View>
           {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}

@@ -43,7 +43,8 @@ async function request(path, options = {}) {
       ...options,
       headers,
     });
-  } catch {
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
     throw new Error(`Could not reach the LifeLink server at ${API_URL}. Start the backend and check the API URL.`);
   }
 
@@ -224,6 +225,17 @@ export async function getIncidents({ type, status, search } = {}) {
   const qs = params.toString();
   const data = await request(`/incidents${qs ? `?${qs}` : ''}`);
   return data.incidents || [];
+}
+
+export async function searchHospitals(query, options = {}) {
+  const params = new URLSearchParams({ q: query });
+  const data = await request(`/hospitals/search?${params.toString()}`, {
+    signal: options.signal,
+  });
+  if (!Array.isArray(data.results)) {
+    throw new Error('Hospital search service returned an invalid response');
+  }
+  return data.results;
 }
 
 export async function createIncident(payload) {

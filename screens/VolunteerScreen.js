@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
+import { isValidGhanaPhoneNumber, sanitizeName, sanitizePhoneNumber } from '../utils/validation';
 
 const MOCK_TASKS = [
   {
@@ -88,6 +89,14 @@ export default function VolunteerScreen({ onNavigate }) {
   const handleRegisterVolunteer = () => {
     if (!fullName || !phone || selectedSkills.length === 0) {
       Alert.alert('Incomplete Form', 'Please enter your name, phone number, and select at least one skill.');
+      return;
+    }
+    if (!isValidGhanaPhoneNumber(phone)) {
+      Alert.alert('Invalid phone number', 'Enter 0241234567 or +233241234567.');
+      return;
+    }
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      Alert.alert('Invalid name', 'Please enter a valid full name.');
       return;
     }
 
@@ -194,16 +203,20 @@ export default function VolunteerScreen({ onNavigate }) {
             style={styles.input}
             placeholder="e.g. Kwame Mensah"
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={(value) => setFullName(sanitizeName(value))}
+            autoCapitalize="words"
+            autoCorrect={false}
+            maxLength={100}
           />
 
           <Text style={styles.inputLabel}>Phone Number</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. 0241234567"
+            placeholder="e.g. 0241234567 or +233241234567"
             keyboardType="phone-pad"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(value) => setPhone(sanitizePhoneNumber(value))}
+            maxLength={13}
           />
 
           <Text style={styles.inputLabel}>City / Area</Text>

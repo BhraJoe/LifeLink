@@ -162,6 +162,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
             placeholder="Brief title for the incident"
             value={title}
             onChangeText={setTitle}
+            maxLength={100}
           />
         </View>
 
@@ -173,6 +174,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
             value={location}
             onChangeText={setLocation}
             placeholder="Incident location"
+            maxLength={200}
           />
         </View>
         <TouchableOpacity style={styles.locationLink} onPress={getCurrentLocation}>
@@ -193,6 +195,7 @@ export default function ReportIncidentScreen({ onNavigate, onGoBack }) {
             multiline
             value={description}
             onChangeText={setDescription}
+            maxLength={1000}
           />
         </View>
 
