@@ -23,7 +23,13 @@
     },
     "plugins": [
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow LifeLink to use your location to share it during an SOS."
+        }
+      ]
     ]
   }
 }

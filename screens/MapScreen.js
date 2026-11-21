@@ -17,10 +17,11 @@ const TYPE_COLORS = {
   default: '#10B981',
 };
 
-export default function MapScreen({ onNavigate }) {
+export default function MapScreen({ onNavigate, onGoBack, routeParams }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const requestedLocation = routeParams?.location || null;
+  const [userLocation, setUserLocation] = useState(requestedLocation);
   const [incidents, setIncidents] = useState([]);
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
@@ -30,35 +31,38 @@ export default function MapScreen({ onNavigate }) {
       setLoading(true);
       setError(null);
 
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      let center = DEFAULT_CENTER;
-      let zoom = DEFAULT_ZOOM;
-
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const userCoords = {
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        };
-        setUserLocation(userCoords);
-        center = userCoords;
-        zoom = 14;
+      if (requestedLocation) {
+        setUserLocation(requestedLocation);
+      } else {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const userCoords = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          };
+          setUserLocation(userCoords);
+        }
       }
 
-      const data = await getIncidents();
-      const withCoords = (data || []).filter(
-        (inc) => inc.latitude != null && inc.longitude != null
-      );
-      setIncidents(withCoords);
+      if (requestedLocation) {
+        setIncidents([]);
+      } else {
+        const data = await getIncidents();
+        const withCoords = (data || []).filter(
+          (inc) => inc.latitude != null && inc.longitude != null
+        );
+        setIncidents(withCoords);
+      }
     } catch (err) {
       console.error('MapScreen load error:', err);
       setError(err.message || 'Failed to load map data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [requestedLocation?.latitude, requestedLocation?.longitude]);
 
   useEffect(() => {
     loadData();
@@ -247,7 +251,7 @@ export default function MapScreen({ onNavigate }) {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => onNavigate('Home')}>
+          <TouchableOpacity onPress={() => (onGoBack ? onGoBack() : onNavigate('Home'))}>
             <Feather name="chevron-left" size={28} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Map</Text>
@@ -268,7 +272,7 @@ export default function MapScreen({ onNavigate }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onNavigate('Home')}>
+        <TouchableOpacity onPress={() => (onGoBack ? onGoBack() : onNavigate('Home'))}>
           <Feather name="chevron-left" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>

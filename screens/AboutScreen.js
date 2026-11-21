@@ -26,17 +26,17 @@ export default function AboutScreen({ onNavigate, onGoBack }) {
 
         <Text style={styles.sectionTitle}>What it does</Text>
         <Text style={styles.paragraph}>
-          LinkLife lets users report incidents, trigger SOS with live location, find nearby hospitals and pharmacies, contact volunteers, and receive disaster alerts.
+          LifeLink lets users report incidents, find healthcare services, and access community safety tools. Its SOS flow captures a one-time location, records it when the backend is reachable, and prepares a text for trusted contacts to review and send.
         </Text>
 
         <Text style={styles.sectionTitle}>Key features</Text>
         <Text style={styles.paragraph}>
-          Incident reporting, SOS trigger, live location sharing with chosen contacts, searchable hospitals/pharmacies, emergency contacts, volunteer coordination, blood donor listings, and push alerts.
+          Incident reporting, SOS location capture and SMS composition, hospital/pharmacy lookup, emergency contacts, volunteer coordination, blood donor listings, and disaster alert screens. Some screens use sample data.
         </Text>
 
         <Text style={styles.sectionTitle}>Privacy & safety</Text>
         <Text style={styles.paragraph}>
-          Location and personal data are shared only with contacts or responders you choose and used solely to assist during emergencies.
+          SOS coordinates are saved by the backend when it is reachable and included in a text addressed to saved contacts. You must send that text. The prototype does not automatically notify emergency responders.
         </Text>
 
         <Text style={styles.sectionTitle}>Support</Text>
@@ -68,9 +68,7 @@ export default function AboutScreen({ onNavigate, onGoBack }) {
 
         <Text style={styles.sectionTitle}>Data & Privacy</Text>
         <Text style={styles.paragraph}>
-          We collect only the data necessary to provide emergency services (location, contact
-          details, and reports). Data is shared only with contacts and responders you authorize.
-          For full details, see the Privacy section and policies on our Help Center.
+          Trusted contacts are stored on your device. If the backend is reachable, SOS coordinates are saved in a local JSON file on that server; they are also added to a text addressed to your saved contacts. You must send the text. This prototype is not a production emergency service.
         </Text>
 
         <Text style={styles.sectionTitle}>Contact</Text>

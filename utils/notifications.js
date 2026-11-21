@@ -1,15 +1,29 @@
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let notifications;
+
+function getNotifications() {
+  if (!notifications) {
+    notifications = require('expo-notifications');
+    notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+
+  return notifications;
+}
 
 export async function registerForPushNotificationsAsync() {
+  if (Platform.OS === 'android' && Constants.expoGoConfig) {
+    return null;
+  }
+
+  const Notifications = getNotifications();
   let token;
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -49,6 +63,7 @@ export async function registerForPushNotificationsAsync() {
 }
 
 export function setupNotificationListeners(onNotification, onResponse) {
+  const Notifications = getNotifications();
   const subscription1 = Notifications.addNotificationReceivedListener(onNotification);
   const subscription2 = Notifications.addNotificationResponseReceivedListener(onResponse);
 

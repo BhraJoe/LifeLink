@@ -60,7 +60,7 @@ export default function SettingsScreen({ onNavigate, onGoBack }) {
           />
         </View>
         <Text style={styles.helpText}>
-          When location sharing is enabled, emergency responders and selected contacts can see your live location during an SOS.
+          Prototype setting only: SOS requests location permission and uses a one-time location in a prepared text. This switch does not control SOS or notify responders.
         </Text>
 
         <Text style={styles.sectionTitle}>Language</Text>
@@ -102,7 +102,7 @@ export default function SettingsScreen({ onNavigate, onGoBack }) {
 
         <Text style={styles.sectionTitle}>About this app</Text>
         <Text style={styles.paragraph}>
-          LinkLife helps you stay connected during emergencies with fast SOS alerts, live location sharing, hospital and pharmacy lookup, and community support.
+          LifeLink is a safety prototype with an SOS flow that captures a location and prepares a text for trusted contacts. The user must send the text; there is no automatic responder dispatch.
         </Text>
 
         <Text style={styles.sectionTitle}>Tips</Text>

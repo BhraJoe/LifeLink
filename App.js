@@ -115,7 +115,13 @@ export default function App() {
       case 'Home':
         return <HomeScreen onNavigate={handleNavigate} />;
       case 'Map':
-        return <MapScreen onNavigate={handleNavigate} />;
+        return (
+          <MapScreen
+            onNavigate={handleNavigate}
+            onGoBack={handleGoBack}
+            routeParams={currentScreenParams}
+          />
+        );
       case 'Community':
         return <CommunityScreen onNavigate={handleNavigate} />;
       case 'Profile':

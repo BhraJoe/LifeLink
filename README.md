@@ -16,7 +16,7 @@ The Expo app includes screens and sample flows for:
 - Community incident reports, missing-person reports, and sightings.
 - Disaster alerts, volunteer, and community screens.
 
-Some screens use sample or hard-coded information. The SOS screen currently shows a sample location; holding its button opens the live-location screen. The emergency contact list is kept in screen state, and the app does not automatically send SMS or push alerts to those contacts. There is no live ambulance, police, or fire-service dispatch integration.
+The SOS flow requests foreground location access, records the coordinates on the backend, and opens an SMS composer addressed to saved trusted contacts. The user must review and tap Send; LifeLink cannot verify message delivery. Contacts are stored on the device. The SOS map view and message link point to the captured coordinates. There is no automatic SMS, push alert, background tracking, or live ambulance, police, or fire-service dispatch integration.
 
 ## Technology
 
@@ -26,7 +26,7 @@ Some screens use sample or hard-coded information. The SOS screen currently show
 - **Validation:** Zod
 - **Local app storage:** AsyncStorage
 
-The current backend is a prototype: user data is written to a local JSON file, while incident and missing-person records are held in memory and are lost when the server restarts. It does not currently use PostgreSQL or Prisma.
+The current backend is a prototype: user and SOS records are written to local JSON files, while incident and missing-person records are held in memory and are lost when the server restarts. It does not currently use PostgreSQL or Prisma. SOS recording requires a signed-in user and a reachable backend; when recording fails, the app reports the failure and still lets the user prepare an SMS.
 
 ## Getting started
 
@@ -59,6 +59,8 @@ npm run dev
 ```
 
 The backend listens on port `4000` by default. The mobile app’s API URL defaults to port `4002`, so set `EXPO_PUBLIC_API_URL` as shown above (or configure it to match your backend). You can override the backend port with `PORT`.
+
+The SOS SMS composer is available on Android and iOS devices with SMS capability; it is not available in a browser or iOS simulator. Test with trusted contacts and never assume an alert was delivered.
 
 For local development, set a private `JWT_SECRET` environment variable rather than relying on the backend’s built-in development fallback. Do not use the prototype backend as-is for production or real emergency data.
 

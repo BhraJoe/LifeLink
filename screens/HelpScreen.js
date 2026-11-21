@@ -24,9 +24,9 @@ export default function HelpScreen({ onNavigate, onGoBack }) {
   };
 
   const faqs = [
-    { q: 'How do I trigger an SOS?', a: 'Tap the SOS button on the bottom tab or the SOS screen and choose contacts to notify with your live location.' },
-    { q: 'Can I share my location only with specific contacts?', a: 'Yes — when you trigger SOS or share location, choose which contacts or responders should receive it.' },
-    { q: 'How is my data used?', a: 'We use your data only to assist during emergencies and to provide app features. See the Privacy section in About for more.' },
+    { q: 'How do I trigger an SOS?', a: 'Add trusted phone numbers under Emergency Contacts, then press and hold SOS. LifeLink captures your location and opens a text addressed to those contacts. Review it and tap Send; delivery is not guaranteed.' },
+    { q: 'Can I choose who receives my SOS text?', a: 'The SMS composer is prefilled with all saved trusted contacts. You can review or change recipients before sending.' },
+    { q: 'How is my data used?', a: 'Trusted contacts are stored on your device. An SOS location is sent to the configured backend for recording and added to an SMS draft. Do not use this prototype for sensitive or real emergency data.' },
   ];
 
   return (

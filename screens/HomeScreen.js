@@ -43,7 +43,7 @@ export default function HomeScreen({ onNavigate }) {
         >
           <View>
             <Text style={styles.sosCardTitle}>SOS Emergency</Text>
-            <Text style={styles.sosCardSub}>Tap to call for help</Text>
+            <Text style={styles.sosCardSub}>Press and hold to prepare an SOS text</Text>
           </View>
           <View style={styles.sosCircle}>
             <Text style={styles.sosCircleText}>SOS</Text>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import BottomTabBar from './BottomTabBar';
+import { getEmergencyContacts, saveEmergencyContacts } from '../utils/emergencyContacts';
 
 const OFFICIAL_HOTLINES = [
   {
@@ -57,42 +58,70 @@ const OFFICIAL_HOTLINES = [
   },
 ];
 
-const INITIAL_PERSONAL_CONTACTS = [
-  { id: 'c1', name: 'Kojo Mensah (Brother)', relationship: 'Brother', phone: '+233 24 111 2233' },
-  { id: 'c2', name: 'Dr. Evelyn Addo', relationship: 'Primary Physician', phone: '+233 20 444 5566' },
-];
-
-export default function EmergencyContactsScreen({ onNavigate }) {
-  const [personalContacts, setPersonalContacts] = useState(INITIAL_PERSONAL_CONTACTS);
+export default function EmergencyContactsScreen({ onNavigate, onGoBack }) {
+  const [personalContacts, setPersonalContacts] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newRelationship, setNewRelationship] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const [contactsReady, setContactsReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    getEmergencyContacts()
+      .then(contacts => {
+        if (isMounted) setPersonalContacts(contacts);
+      })
+      .catch(error => {
+        if (isMounted) Alert.alert('Contacts unavailable', error.message);
+      })
+      .finally(() => {
+        if (isMounted) setContactsReady(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleCall = (phone) => {
     Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`);
   };
 
-  const handleAddContact = () => {
-    if (!newName || !newPhone) {
+  const handleAddContact = async () => {
+    const name = newName.trim();
+    const phone = newPhone.trim();
+    if (!name || !phone) {
       Alert.alert('Incomplete Fields', 'Please enter contact name and phone number.');
+      return;
+    }
+
+    const digitCount = phone.replace(/\D/g, '').length;
+    if (!/^\+?[\d\s().-]+$/.test(phone) || digitCount < 7 || digitCount > 15) {
+      Alert.alert('Invalid phone number', 'Enter a phone number with 7 to 15 digits.');
       return;
     }
 
     const contact = {
       id: `c_${Date.now()}`,
-      name: newName,
-      relationship: newRelationship || 'Family/Friend',
-      phone: newPhone,
+      name,
+      relationship: newRelationship.trim() || 'Family/Friend',
+      phone,
     };
 
-    setPersonalContacts([...personalContacts, contact]);
-    Alert.alert('Contact Saved! 📞', `${newName} added to your trusted emergency contacts.`);
+    try {
+      const updatedContacts = [...personalContacts, contact];
+      await saveEmergencyContacts(updatedContacts);
+      setPersonalContacts(updatedContacts);
+      Alert.alert('Contact saved', `${name} added to your trusted emergency contacts.`);
 
-    setNewName('');
-    setNewRelationship('');
-    setNewPhone('');
-    setModalVisible(false);
+      setNewName('');
+      setNewRelationship('');
+      setNewPhone('');
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert('Could not save contact', error.message);
+    }
   };
 
   const handleDeleteContact = (id, name) => {
@@ -101,7 +130,15 @@ export default function EmergencyContactsScreen({ onNavigate }) {
       {
         text: 'Remove',
         style: 'destructive',
-        onPress: () => setPersonalContacts(personalContacts.filter((c) => c.id !== id)),
+        onPress: async () => {
+          try {
+            const updatedContacts = personalContacts.filter(contact => contact.id !== id);
+            await saveEmergencyContacts(updatedContacts);
+            setPersonalContacts(updatedContacts);
+          } catch (error) {
+            Alert.alert('Could not remove contact', error.message);
+          }
+        },
       },
     ]);
   };
@@ -112,7 +149,10 @@ export default function EmergencyContactsScreen({ onNavigate }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => onNavigate('Home')}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => (onGoBack ? onGoBack() : onNavigate('Home'))}
+        >
           <Ionicons name="arrow-back" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Contacts</Text>
@@ -163,10 +203,15 @@ export default function EmergencyContactsScreen({ onNavigate }) {
         </View>
 
         <Text style={styles.sectionSub}>
-          These contacts are automatically alerted via SMS and push notification when you press the SOS button.
+          SOS opens a text message addressed to these contacts with your location. Review it and tap Send in your messaging app.
         </Text>
 
         <View style={styles.cardGroup}>
+          {personalContacts.length === 0 && (
+            <Text style={styles.emptyContacts}>
+              No trusted contacts yet. Add someone you trust to prepare an SOS text.
+            </Text>
+          )}
           {personalContacts.map((c, idx) => (
             <View
               key={c.id}
@@ -206,7 +251,9 @@ export default function EmergencyContactsScreen({ onNavigate }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Add Emergency Contact</Text>
-            <Text style={styles.modalSub}>Saved contacts will receive your location during SOS triggers.</Text>
+            <Text style={styles.modalSub}>
+              Saved contacts are added to a prepared SOS text. You must send it from your messaging app.
+            </Text>
 
             <Text style={styles.inputLabel}>Contact Name *</Text>
             <TextInput
@@ -238,8 +285,14 @@ export default function EmergencyContactsScreen({ onNavigate }) {
                 <Text style={styles.cancelModalText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.confirmModalBtn} onPress={handleAddContact}>
-                <Text style={styles.confirmModalText}>Save Contact</Text>
+              <TouchableOpacity
+                style={[styles.confirmModalBtn, !contactsReady && styles.disabledButton]}
+                onPress={handleAddContact}
+                disabled={!contactsReady}
+              >
+                <Text style={styles.confirmModalText}>
+                  {contactsReady ? 'Save Contact' : 'Loading...'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -271,6 +324,8 @@ const styles = StyleSheet.create({
   personalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   addText: { color: '#007A43', fontSize: 14, fontWeight: '700' },
   sectionSub: { fontSize: 12, color: '#6B7280', marginBottom: 10 },
+  emptyContacts: { paddingVertical: 16, color: '#6B7280', fontSize: 13, lineHeight: 19 },
+  disabledButton: { opacity: 0.6 },
   cardGroup: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,

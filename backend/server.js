@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import dotenv from 'dotenv';
-import { readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,6 +13,7 @@ dotenv.config();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = join(__dirname, 'data', 'users.json');
+const SOS_DATA_FILE = join(__dirname, 'data', 'sos-events.json');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -25,6 +27,7 @@ const router = express.Router();
 const users = new Map();
 const missingPersons = new Map();
 const incidents = new Map();
+const sosEvents = new Map();
 
 async function loadUsers() {
   try {
@@ -40,7 +43,24 @@ async function loadUsers() {
 
 async function persistUsers() {
   const list = Array.from(users.values());
+  await mkdir(dirname(DATA_FILE), { recursive: true });
   await writeFile(DATA_FILE, JSON.stringify(list, null, 2));
+}
+
+async function loadSosEvents() {
+  try {
+    const raw = await readFile(SOS_DATA_FILE, 'utf-8');
+    for (const event of JSON.parse(raw)) {
+      sosEvents.set(event.id, event);
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
+
+async function persistSosEvents() {
+  await mkdir(dirname(SOS_DATA_FILE), { recursive: true });
+  await writeFile(SOS_DATA_FILE, JSON.stringify(Array.from(sosEvents.values()), null, 2));
 }
 
 const loginSchema = z.object({
@@ -70,6 +90,12 @@ const editProfileSchema = z.object({
   path: ['confirmPassword'],
 });
 
+const sosEventSchema = z.object({
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  accuracy: z.number().finite().nonnegative().optional(),
+});
+
 function generateToken(user) {
   return jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -96,8 +122,9 @@ function authMiddleware(req, res, next) {
 router.post('/auth/register', async (req, res) => {
   try {
     const data = registerSchema.parse(req.body);
+    data.email = data.email.trim().toLowerCase();
     
-    const existing = Array.from(users.values()).find(u => u.email === data.email);
+    const existing = Array.from(users.values()).find(u => u.email.toLowerCase() === data.email);
     if (existing) {
       return res.status(400).json({ message: 'Email already registered' });
     }
@@ -138,8 +165,9 @@ router.post('/auth/register', async (req, res) => {
 router.post('/auth/login', async (req, res) => {
   try {
     const data = loginSchema.parse(req.body);
+    data.email = data.email.trim().toLowerCase();
     
-    const user = Array.from(users.values()).find(u => u.email === data.email);
+    const user = Array.from(users.values()).find(u => u.email.toLowerCase() === data.email);
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -185,9 +213,10 @@ router.get('/auth/me', authMiddleware, (req, res) => {
 router.put('/auth/profile', authMiddleware, async (req, res) => {
   try {
     const data = editProfileSchema.parse(req.body);
+    data.email = data.email.trim().toLowerCase();
     const user = req.user;
 
-    const existing = Array.from(users.values()).find(u => u.email === data.email && u.id !== user.id);
+    const existing = Array.from(users.values()).find(u => u.email.toLowerCase() === data.email && u.id !== user.id);
     if (existing) {
       return res.status(400).json({ message: 'Email already in use' });
     }
@@ -250,7 +279,8 @@ router.post('/auth/profile/avatar', authMiddleware, async (req, res) => {
 router.post('/auth/forgot-password', async (req, res) => {
   try {
     const data = forgotPasswordSchema.parse(req.body);
-    const user = Array.from(users.values()).find(u => u.email === data.email);
+    const email = data.email.trim().toLowerCase();
+    const user = Array.from(users.values()).find(u => u.email.toLowerCase() === email);
     
     if (user) {
       res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
@@ -375,9 +405,73 @@ router.post('/sos/live-location', authMiddleware, (req, res) => {
   });
 });
 
+router.post('/sos', authMiddleware, async (req, res) => {
+  try {
+    const location = sosEventSchema.parse(req.body);
+    const event = {
+      id: randomUUID(),
+      userId: req.user.id,
+      ...location,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    sosEvents.set(event.id, event);
+    try {
+      await persistSosEvents();
+    } catch (error) {
+      sosEvents.delete(event.id);
+      console.error('Failed to persist SOS event:', error);
+      return res.status(500).json({ message: 'SOS could not be recorded' });
+    }
+
+    res.status(201).json({ sosEvent: event });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: error.errors[0].message });
+    }
+    console.error('Failed to create SOS event:', error);
+    res.status(500).json({ message: 'SOS could not be recorded' });
+  }
+});
+
+router.patch('/sos/:id/cancel', authMiddleware, async (req, res) => {
+  const event = sosEvents.get(req.params.id);
+  if (!event || event.userId !== req.user.id) {
+    return res.status(404).json({ message: 'SOS event not found' });
+  }
+
+  const previousStatus = event.status;
+  const previousUpdatedAt = event.updatedAt;
+  event.status = 'cancelled';
+  event.updatedAt = new Date().toISOString();
+
+  try {
+    await persistSosEvents();
+    res.json({ sosEvent: event });
+  } catch (error) {
+    event.status = previousStatus;
+    if (previousUpdatedAt) {
+      event.updatedAt = previousUpdatedAt;
+    } else {
+      delete event.updatedAt;
+    }
+    console.error('Failed to cancel SOS event:', error);
+    res.status(500).json({ message: 'SOS could not be cancelled' });
+  }
+});
+
 app.use('/api', router);
 
-app.listen(PORT, async () => {
+async function startServer() {
   await loadUsers();
-  console.log(`LifeLink backend running on http://localhost:${PORT}`);
+  await loadSosEvents();
+  app.listen(PORT, () => {
+    console.log(`LifeLink backend running on http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('Failed to start LifeLink backend:', error);
+  process.exit(1);
 });

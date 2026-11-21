@@ -1,6 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4002/api';
+function getDefaultApiUrl() {
+  const hostUri = Constants.expoConfig?.hostUri;
+  const host = hostUri?.replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+
+  if (Platform.OS === 'web') {
+    return 'http://localhost:4000/api';
+  }
+
+  if (Platform.OS === 'android' && (!host || host === 'localhost' || host === '127.0.0.1')) {
+    return 'http://10.0.2.2:4000/api';
+  }
+
+  return `http://${host || 'localhost'}:4000/api`;
+}
+
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || getDefaultApiUrl()).replace(/\/$/, '');
 const BASE_URL = API_URL.replace(/\/api$/, '');
 const TOKEN_KEY = 'lifelink_token';
 const USER_KEY = 'lifelink_user';
@@ -20,10 +37,15 @@ async function request(path, options = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new Error(`Could not reach the LifeLink server at ${API_URL}. Start the backend and check the API URL.`);
+  }
 
   const data = await response.json().catch(() => ({}));
 
@@ -226,4 +248,20 @@ export async function shareLiveLocation(payload) {
     body: JSON.stringify(payload),
   });
   return data;
+}
+
+export async function createSosEvent(payload, options = {}) {
+  const data = await request('/sos', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    signal: options.signal,
+  });
+  return data.sosEvent;
+}
+
+export async function cancelSosEvent(id) {
+  const data = await request(`/sos/${encodeURIComponent(id)}/cancel`, {
+    method: 'PATCH',
+  });
+  return data.sosEvent;
 }
